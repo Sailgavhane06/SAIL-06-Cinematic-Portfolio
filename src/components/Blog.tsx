@@ -1,31 +1,53 @@
 "use client";
 
-import { ArrowRight, BookOpen, Clock } from "lucide-react";
+import { SiteData } from "@/data/defaultData";
+import { ArrowRight, Clock, Edit3, Plus } from "lucide-react";
 
-export default function Blog() {
-  const articles = [
+interface BlogProps {
+  blogData?: SiteData["blog"];
+  isOwner?: boolean;
+  onEditSection?: () => void;
+  onAddArticle?: () => void;
+}
+
+export default function Blog({
+  blogData,
+  isOwner = false,
+  onEditSection,
+  onAddArticle,
+}: BlogProps) {
+  const defaultArticles = [
     {
       title: "Designing Robust Hardware: Lessons from 100+ PCB Iterations",
-      excerpt: "Why signal integrity, thermal dissipation, and ground-loop management are often overlooked in early prototypes and how to prevent field failures.",
+      excerpt:
+        "Why signal integrity, thermal dissipation, and ground-loop management are often overlooked in early prototypes and how to prevent field failures.",
       category: "Hardware Engineering",
       readTime: "7 min read",
       date: "October 2026",
     },
     {
       title: "Bridging Silicon & Code: Building Embedded Systems That Don't Crash",
-      excerpt: "Techniques for deterministic firmware design, state-machine resilience, and hardware-in-the-loop testing workflows for mission-critical electronics.",
+      excerpt:
+        "Techniques for deterministic firmware design, state-machine resilience, and hardware-in-the-loop testing workflows for mission-critical electronics.",
       category: "Firmware & Architecture",
       readTime: "5 min read",
       date: "September 2026",
     },
     {
       title: "I Don't Just Learn Things. I Build Things — The Maker Mindset",
-      excerpt: "How rapid prototyping and an uncompromising builder philosophy accelerates engineering comprehension 10x faster than passive theory.",
+      excerpt:
+        "How rapid prototyping and an uncompromising builder philosophy accelerates engineering comprehension 10x faster than passive theory.",
       category: "Philosophy & Building",
       readTime: "4 min read",
       date: "August 2026",
     },
   ];
+
+  const heading = blogData?.heading || "Engineering Notes & Learnings";
+  const description =
+    blogData?.description ||
+    "Deep dives into electronics design, product prototyping, and software engineering.";
+  const articles = blogData?.articles || defaultArticles;
 
   return (
     <section
@@ -43,12 +65,39 @@ export default function Blog() {
               </span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-              Engineering Notes & Learnings
+              {heading}
             </h2>
             <p className="mt-4 text-sm sm:text-base text-[#C5C5C5] font-light">
-              Deep dives into electronics design, product prototyping, and software engineering.
+              {description}
             </p>
           </div>
+
+          {/* Owner-Only Action Buttons */}
+          {isOwner && (
+            <div className="flex items-center gap-2.5 shrink-0">
+              {onAddArticle && (
+                <button
+                  onClick={onAddArticle}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FF3028] hover:bg-[#ff453e] text-xs font-semibold text-white shadow-md transition-all cursor-pointer active:scale-95"
+                  title="Add New Blog Article (Owner Mode)"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Add Information</span>
+                </button>
+              )}
+
+              {onEditSection && (
+                <button
+                  onClick={onEditSection}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
+                  title="Edit Blog Section (Owner Mode)"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Edit Information</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Article Cards Grid */}

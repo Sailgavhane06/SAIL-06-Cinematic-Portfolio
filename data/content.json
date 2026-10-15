@@ -1,0 +1,313 @@
+{
+  "hero": {
+    "greeting": "Hi, I'm",
+    "name": "SAIL",
+    "rolesLine1": "CREATOR × ELECTRICAL ENGINEER",
+    "rolesLine2": "× BUILDER × FOUNDER",
+    "descriptionLine1": "I design, build and share ideas",
+    "descriptionLine2": "that solve real problems.",
+    "rightTaglineLine1": "Turning ideas",
+    "rightTaglineLine2": "into real-world",
+    "rightTaglineLine3": "solutions.",
+    "experienceYears": "5+",
+    "experienceLine1": "building projects, sharing learnings",
+    "experienceLine2": "and creating impact.",
+    "portraitImage": "/sail-portrait.jpg"
+  },
+  "about": {
+    "quotePart1": "I don't just learn things.",
+    "quoteHighlight": "I build things.",
+    "bio": "I am Sail Gavhane — an electrical engineer, software builder, and founder driven by curiosity and an uncompromising commitment to craftsmanship. I merge the precision of hardware with the agility of modern software to build real-world solutions.",
+    "profilePhoto": "/sail-portrait.jpg",
+    "pillars": [
+      {
+        "id": "pillar-1",
+        "title": "Electrical Engineer",
+        "desc": "Designing intelligent circuit systems, embedded hardware, and high-performance electronic solutions with precision."
+      },
+      {
+        "id": "pillar-2",
+        "title": "Software & Systems Builder",
+        "desc": "Bridging the gap between silicon and software — architecting full-stack web platforms, firmware, and scalable tools."
+      },
+      {
+        "id": "pillar-3",
+        "title": "Creative Technologist",
+        "desc": "Rapid prototyping from 0 to 1. Transforming complex scientific principles into tangible, elegant physical devices."
+      },
+      {
+        "id": "pillar-4",
+        "title": "Founder & Innovator",
+        "desc": "Building user-centric products and ventures that address real-world engineering bottlenecks and create lasting value."
+      }
+    ],
+    "highlights": [
+      "5+ years of hands-on prototyping and product engineering",
+      "Deep expertise in electronics, circuit design & embedded code",
+      "Creator of open-source tools, technical guides & hardware builds",
+      "Relentless focus on solving high-friction, real-world problems"
+    ]
+  },
+  "engineering": {
+    "heading": "Systems, Hardware & Embedded Architecture",
+    "description": "Designing end-to-end hardware solutions from schematic capture to custom PCB layout, firmware programming, and industrial validation.",
+    "highlights": [
+      "High-speed circuit design and impedance-matched routing",
+      "Low-power microcontrollers (STM32, ESP32, nRF52) and RTOS architectures",
+      "Sensor fusion, CAN/Modbus industrial communication & telemetry",
+      "Thermal modeling, enclosure integration & rapid additive fabrication"
+    ],
+    "stats": [
+      {
+        "label": "Hardware Iterations",
+        "value": "100+"
+      },
+      {
+        "label": "PCB Layouts",
+        "value": "40+"
+      },
+      {
+        "label": "Uptime Reliability",
+        "value": "99.9%"
+      },
+      {
+        "label": "Sub-50ms Latency",
+        "value": "<50ms"
+      }
+    ]
+  },
+  "founder": {
+    "heading": "Venture Building & Technological Innovation",
+    "missionStatement": "Empowering developers and engineers with tools that accelerate physical computing, eliminate hardware-software friction, and scale sustainable infrastructure.",
+    "description": "As a founder, I combine technical discipline with market intuition to build high-leverage products that stand the test of time.",
+    "milestones": [
+      {
+        "id": "milestone-1",
+        "year": "2024",
+        "title": "Founded SAIL Systems Research",
+        "description": "Initiated independent R&D group focused on modular smart hardware architectures and edge diagnostics."
+      },
+      {
+        "id": "milestone-2",
+        "year": "2025",
+        "title": "Shipped Autonomous IoT Framework",
+        "description": "Deployed edge telemetry across industrial sites with 99.9% telemetry packet integrity."
+      },
+      {
+        "id": "milestone-3",
+        "year": "2026",
+        "title": "Scaling Open Engineering Initiatives",
+        "description": "Creating open hardware schematics and developer toolkits to educate the next generation of builders."
+      }
+    ],
+    "ctaText": "Explore Joint Ventures",
+    "ctaLink": "#contact"
+  },
+  "projects": [
+    {
+      "id": "project-1",
+      "title": "Autonomous IoT Sensor Mesh",
+      "category": "Hardware & Embedded Systems",
+      "desc": "Low-power edge computing nodes utilizing custom PCB architectures, telemetry transceivers, and real-time sensor fusion algorithms.",
+      "detailedDesc": "Multi-point wireless sensor mesh built for harsh industrial environments. Includes custom power management with solar harvesting and deep sleep optimization.",
+      "tech": [
+        "KiCad",
+        "STM32",
+        "C++",
+        "MQTT",
+        "FreeRTOS"
+      ],
+      "highlight": "Custom PCB Design",
+      "image": "/sail-portrait.jpg",
+      "imageAlt": "Autonomous IoT Sensor Mesh PCB Prototype",
+      "link": "https://github.com/Sailgavhane06",
+      "order": 1,
+      "status": "published"
+    },
+    {
+      "id": "project-2",
+      "title": "Kinetic Motor Controller & Inverter",
+      "category": "Power Electronics",
+      "desc": "High-efficiency BLDC motor driver designed for robotic actuators, featuring field-oriented control (FOC) and regenerative braking safety circuits.",
+      "detailedDesc": "Designed with isolated gate drivers and low RDS(on) MOSFETs to minimize thermal losses while providing high peak torque response.",
+      "tech": [
+        "Power MOSFETs",
+        "Embedded C",
+        "CAN Bus",
+        "Thermal Modeling"
+      ],
+      "highlight": "High Efficiency 98.4%",
+      "image": "/sail-portrait.jpg",
+      "imageAlt": "BLDC Motor Controller PCB",
+      "link": "https://github.com/Sailgavhane06",
+      "order": 2,
+      "status": "published"
+    },
+    {
+      "id": "project-3",
+      "title": "SAIL.06 Studio Platform",
+      "category": "Full-Stack Software Architecture",
+      "desc": "High-performance interactive web application built with modern reactive principles, dynamic telemetry visualizers, and minimal latency API pipelines.",
+      "detailedDesc": "Cinematic, dark portfolio and content engine engineered with Next.js App Router, Tailwind CSS, and secure server-side administration.",
+      "tech": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "Node.js"
+      ],
+      "highlight": "Sub-50ms Latency",
+      "image": "/sail-portrait.jpg",
+      "imageAlt": "SAIL.06 Studio Platform Architecture",
+      "link": "https://github.com/Sailgavhane06",
+      "order": 3,
+      "status": "published"
+    },
+    {
+      "id": "project-4",
+      "title": "Smart Grid Energy Diagnostics",
+      "category": "Industrial Automation",
+      "desc": "Non-invasive current sensing architecture capable of detecting power anomalies, harmonic distortions, and micro-surges across industrial installations.",
+      "detailedDesc": "Employs high-speed analog front-ends with DSP filtering algorithms to classify electrical anomalies in real time without interfering with main supply lines.",
+      "tech": [
+        "DSP Algorithms",
+        "Python",
+        "ADC Processing",
+        "Modbus"
+      ],
+      "highlight": "Field Tested",
+      "image": "/sail-portrait.jpg",
+      "imageAlt": "Smart Grid Energy Diagnostics System",
+      "link": "https://github.com/Sailgavhane06",
+      "order": 4,
+      "status": "published"
+    }
+  ],
+  "blog": {
+    "heading": "Engineering Notes & Learnings",
+    "description": "Deep dives into electronics design, product prototyping, and software engineering.",
+    "articles": [
+      {
+        "id": "post-1",
+        "title": "Designing Robust Hardware: Lessons from 100+ PCB Iterations",
+        "slug": "designing-robust-hardware-lessons",
+        "excerpt": "Why signal integrity, thermal dissipation, and ground-loop management are often overlooked in early prototypes and how to prevent field failures.",
+        "content": "Designing custom electronics is an iterative discipline where simulation can only take you so far. Ground-loop currents, capacitive crosstalk, and thermal dissipation around switching regulators require meticulous layout design. In this article, we examine common high-frequency pitfalls and design rules to adhere to.",
+        "category": "Hardware Engineering",
+        "readTime": "7 min read",
+        "date": "October 2026",
+        "thumbnail": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80",
+        "status": "published"
+      },
+      {
+        "id": "post-2",
+        "title": "Bridging Silicon & Code: Building Embedded Systems That Don't Crash",
+        "slug": "bridging-silicon-and-code",
+        "excerpt": "Techniques for deterministic firmware design, state-machine resilience, and hardware-in-the-loop testing workflows for mission-critical electronics.",
+        "content": "When firmware fails on an embedded microcontroller in the field, there is no browser refresh button. We explore watchdog timer implementations, stack overflow guards, and deterministic state-machine architectures.",
+        "category": "Firmware & Architecture",
+        "readTime": "5 min read",
+        "date": "September 2026",
+        "thumbnail": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1000&q=80",
+        "status": "published"
+      },
+      {
+        "id": "post-3",
+        "title": "I Don't Just Learn Things. I Build Things — The Maker Mindset",
+        "slug": "the-maker-mindset",
+        "excerpt": "How rapid prototyping and an uncompromising builder philosophy accelerates engineering comprehension 10x faster than passive theory.",
+        "content": "Theoretical knowledge is essential, but true synthesis occurs when your fingers solder the joints, write the firmware, and watch the circuit come to life. Build to learn, not just learn to build.",
+        "category": "Philosophy & Building",
+        "readTime": "4 min read",
+        "date": "August 2026",
+        "thumbnail": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+        "status": "published"
+      }
+    ]
+  },
+  "travel": {
+    "headingPart1": "Exploring Beyond",
+    "headingHighlight": "The Workbench.",
+    "description": "Travel fuels engineering creativity. From high-altitude mountain trails to robotics fabrication hubs across the globe, here is where ideas collide with the real world.",
+    "followTitle": "Follow My Travel Journey",
+    "followSubtitle": "Get occasional postcards, expedition logs, and field updates directly to your inbox.",
+    "stories": [
+      {
+        "id": "travel-1",
+        "title": "Alpine Ridge Exploration",
+        "location": "Himalayan Foothills & Mountain Passes",
+        "date": "September 2026",
+        "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1000&q=80",
+        "note": "High-altitude trek testing low-temperature telemetry sensors and rugged power banks in sub-zero terrain.",
+        "caption": "Field testing hardware under extreme temperatures.",
+        "altText": "Himalayan mountain pass with snow capped peaks",
+        "order": 1,
+        "status": "published"
+      },
+      {
+        "id": "travel-2",
+        "title": "Coastal Architecture & Marine Labs",
+        "location": "Pacific Coastline Expeditions",
+        "date": "July 2026",
+        "imageUrl": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80",
+        "note": "Studying coastal microclimates, tidal power installations, and lightweight saltwater-resistant materials.",
+        "caption": "Marine research outpost testing anti-corrosion materials.",
+        "altText": "Sunny ocean coast with rocky cliff formations",
+        "order": 2,
+        "status": "published"
+      },
+      {
+        "id": "travel-3",
+        "title": "Urban Tech Hubs & Fabrication Centers",
+        "location": "Tokyo & Kyoto Hardware Districts",
+        "date": "May 2026",
+        "imageUrl": "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1000&q=80",
+        "note": "Exploring precision CNC workshops, microelectronics suppliers, and industrial robotics prototyping labs.",
+        "caption": "Sourcing specialized high-precision components in Akihabara.",
+        "altText": "Tokyo urban cityscape with neon lights at night",
+        "order": 3,
+        "status": "published"
+      },
+      {
+        "id": "travel-4",
+        "title": "Night Sky & Observational Astro-Camp",
+        "location": "Dark Sky Reserve, Ladakh",
+        "date": "March 2026",
+        "imageUrl": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1000&q=80",
+        "note": "Stargazing and long-exposure deep space imaging with custom tracking mounts and astrophotography gear.",
+        "caption": "Long-exposure astro-imaging with custom microcontroller tracking rig.",
+        "altText": "Milky way galaxy arching over mountain silhouette",
+        "order": 4,
+        "status": "published"
+      }
+    ]
+  },
+  "contact": {
+    "headingPart1": "Let's Build Something",
+    "headingHighlight": "Exceptional Together.",
+    "description": "Whether you have an ambitious hardware idea, need technical advisory on systems architecture, or want to discuss a new venture — my inbox is always open.",
+    "email": "sail@sail06.com",
+    "location": "India / Global Remote",
+    "socialLinks": {
+      "instagram": {
+        "url": "https://instagram.com/sail.06",
+        "enabled": true
+      },
+      "youtube": {
+        "url": "https://youtube.com/@sail06",
+        "enabled": true
+      },
+      "facebook": {
+        "url": "https://facebook.com/sail06",
+        "enabled": true
+      },
+      "whatsapp": {
+        "url": "https://wa.me/919999999999",
+        "enabled": true
+      },
+      "x": {
+        "url": "https://x.com/sail06",
+        "enabled": true
+      }
+    }
+  }
+}

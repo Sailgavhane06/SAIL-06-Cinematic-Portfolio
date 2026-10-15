@@ -1,14 +1,23 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { Cpu, Zap, Code, Rocket, CheckCircle2 } from "lucide-react";
+import { Cpu, Zap, Code, Rocket, CheckCircle2, Edit3, Plus } from "lucide-react";
 
 interface AboutProps {
   aboutData: SiteData["about"];
   inlineEditMode?: boolean;
+  isOwner?: boolean;
+  onEditSection?: () => void;
+  onAddPillar?: () => void;
 }
 
-export default function About({ aboutData, inlineEditMode = false }: AboutProps) {
+export default function About({
+  aboutData,
+  inlineEditMode = false,
+  isOwner = false,
+  onEditSection,
+  onAddPillar,
+}: AboutProps) {
   const icons = [Zap, Code, Cpu, Rocket];
 
   const highlights = [
@@ -29,27 +38,57 @@ export default function About({ aboutData, inlineEditMode = false }: AboutProps)
     >
       <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
         {/* Section Header */}
-        <div className="max-w-3xl mb-16 sm:mb-20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-[2px] bg-[#FF3028]" />
-            <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
-              ABOUT ME
-            </span>
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 sm:mb-20 gap-6">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-[2px] bg-[#FF3028]" />
+              <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
+                ABOUT ME
+              </span>
+            </div>
+
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+              &ldquo;
+              <span className={editableClass}>{aboutData.quotePart1}</span>{" "}
+              <br />
+              <span className={`text-[#FF3028] ${editableClass}`}>
+                {aboutData.quoteHighlight}
+              </span>
+              &rdquo;
+            </h2>
+            <p
+              className={`mt-6 text-base sm:text-lg text-[#C5C5C5] leading-relaxed max-w-2xl font-light ${editableClass}`}
+            >
+              {aboutData.bio}
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            &ldquo;
-            <span className={editableClass}>{aboutData.quotePart1}</span>{" "}
-            <br />
-            <span className={`text-[#FF3028] ${editableClass}`}>
-              {aboutData.quoteHighlight}
-            </span>
-            &rdquo;
-          </h2>
-          <p
-            className={`mt-6 text-base sm:text-lg text-[#C5C5C5] leading-relaxed max-w-2xl font-light ${editableClass}`}
-          >
-            {aboutData.bio}
-          </p>
+
+          {/* Owner-Only Action Buttons */}
+          {isOwner && (
+            <div className="flex items-center gap-2.5 shrink-0">
+              {onAddPillar && (
+                <button
+                  onClick={onAddPillar}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FF3028] hover:bg-[#ff453e] text-xs font-semibold text-white shadow-md transition-all cursor-pointer active:scale-95"
+                  title="Add Engineering Pillar / Skill (Owner Mode)"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Add Information</span>
+                </button>
+              )}
+
+              {onEditSection && (
+                <button
+                  onClick={onEditSection}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
+                  title="Edit About Section (Owner Mode)"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Edit Information</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 4 Pillars Grid */}

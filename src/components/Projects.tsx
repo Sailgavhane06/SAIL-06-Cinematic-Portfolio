@@ -1,14 +1,23 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Edit3, Plus } from "lucide-react";
 
 interface ProjectsProps {
   projectsData: SiteData["projects"];
   inlineEditMode?: boolean;
+  isOwner?: boolean;
+  onEditSection?: () => void;
+  onAddProject?: () => void;
 }
 
-export default function Projects({ projectsData, inlineEditMode = false }: ProjectsProps) {
+export default function Projects({
+  projectsData,
+  inlineEditMode = false,
+  isOwner = false,
+  onEditSection,
+  onAddProject,
+}: ProjectsProps) {
   const editableClass = inlineEditMode
     ? "outline-dashed outline-1 outline-[#FF3028]/60 hover:outline-[#FF3028] hover:bg-white/[0.04] rounded px-1 cursor-text transition-all"
     : "";
@@ -35,6 +44,33 @@ export default function Projects({ projectsData, inlineEditMode = false }: Proje
               From circuit boards to high-throughput software architectures — designed, built, and shipped to solve concrete engineering challenges.
             </p>
           </div>
+
+          {/* Owner-Only Action Buttons */}
+          {isOwner && (
+            <div className="flex items-center gap-2.5 shrink-0">
+              {onAddProject && (
+                <button
+                  onClick={onAddProject}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FF3028] hover:bg-[#ff453e] text-xs font-semibold text-white shadow-md transition-all cursor-pointer active:scale-95"
+                  title="Add New Project (Owner Mode)"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Add Information</span>
+                </button>
+              )}
+
+              {onEditSection && (
+                <button
+                  onClick={onEditSection}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
+                  title="Edit Projects Section (Owner Mode)"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Edit Information</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Project Cards Grid */}

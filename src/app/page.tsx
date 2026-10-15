@@ -6,127 +6,87 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Projects from "@/components/Projects";
 import Blog from "@/components/Blog";
+import Travel from "@/components/Travel";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import EditModal from "@/components/EditModal";
+import SocialDock from "@/components/SocialDock";
 import { SiteData, defaultSiteData } from "@/data/defaultData";
-
-const STORAGE_KEY = "sail06_portfolio_data_v1";
-const OWNER_STORAGE_KEY = "sail06_owner_auth";
+import { SiteContent } from "@/lib/types";
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState("home");
   const [siteData, setSiteData] = useState<SiteData>(defaultSiteData);
-  const [inlineEditMode, setInlineEditMode] = useState(false);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
 
-  // Initialize data and owner mode check
+  // Fetch verified published content from public API
   useEffect(() => {
-    // 1. Load saved portfolio content
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setSiteData(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.warn("Could not load saved data from localStorage", e);
-    }
+    fetch("/api/content")
+      .then((res) => {
+        if (!res.ok) throw new Error("Public content endpoint returned non-200");
+        return res.json();
+      })
+      .then((json) => {
+        if (json.success && json.data) {
+          const remote: SiteContent = json.data;
 
-    // 2. Check if owner mode is authenticated
-    try {
-      const isOwnerSaved = localStorage.getItem(OWNER_STORAGE_KEY) === "true";
-      const params = new URLSearchParams(window.location.search);
-      const hasParam = params.get("edit") === "true" || params.get("admin") === "true";
+          // Map contact social links from config object to string map for SocialDock
+          const mappedSocialLinks = {
+            instagram: remote.contact?.socialLinks?.instagram?.enabled
+              ? remote.contact.socialLinks.instagram.url
+              : "",
+            youtube: remote.contact?.socialLinks?.youtube?.enabled
+              ? remote.contact.socialLinks.youtube.url
+              : "",
+            facebook: remote.contact?.socialLinks?.facebook?.enabled
+              ? remote.contact.socialLinks.facebook.url
+              : "",
+            whatsapp: remote.contact?.socialLinks?.whatsapp?.enabled
+              ? remote.contact.socialLinks.whatsapp.url
+              : "",
+            x: remote.contact?.socialLinks?.x?.enabled
+              ? remote.contact.socialLinks.x.url
+              : "",
+          };
 
-      if (isOwnerSaved || hasParam) {
-        setIsOwner(true);
-        localStorage.setItem(OWNER_STORAGE_KEY, "true");
-      }
-    } catch (e) {
-      console.warn("Could not verify owner status", e);
-    }
-
-    // 3. Secret keyboard shortcut for owner: Alt + E toggles owner mode
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key === "e" || e.key === "E")) {
-        setIsOwner((prev) => {
-          const next = !prev;
-          if (next) {
-            localStorage.setItem(OWNER_STORAGE_KEY, "true");
-          } else {
-            localStorage.removeItem(OWNER_STORAGE_KEY);
-          }
-          return next;
-        });
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+          setSiteData({
+            hero: {
+              ...defaultSiteData.hero,
+              ...(remote.hero || {}),
+            },
+            about: {
+              ...defaultSiteData.about,
+              ...(remote.about || {}),
+              pillars: remote.about?.pillars?.length ? remote.about.pillars : defaultSiteData.about.pillars,
+            },
+            projects: remote.projects && remote.projects.length > 0 ? remote.projects : defaultSiteData.projects,
+            blog: {
+              heading: remote.blog?.heading || defaultSiteData.blog.heading,
+              description: remote.blog?.description || defaultSiteData.blog.description,
+              articles: remote.blog?.articles?.length ? remote.blog.articles : defaultSiteData.blog.articles,
+            },
+            travel: {
+              ...defaultSiteData.travel,
+              ...(remote.travel || {}),
+            },
+            contact: {
+              ...defaultSiteData.contact,
+              ...(remote.contact || {}),
+            },
+            socialLinks: {
+              ...defaultSiteData.socialLinks,
+              ...mappedSocialLinks,
+            },
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Using baseline content:", err);
+      });
   }, []);
 
-  const handleToggleOwner = () => {
-    setIsOwner((prev) => {
-      const next = !prev;
-      if (next) {
-        localStorage.setItem(OWNER_STORAGE_KEY, "true");
-      } else {
-        localStorage.removeItem(OWNER_STORAGE_KEY);
-      }
-      return next;
-    });
-  };
-
-  const handleExitOwnerMode = () => {
-    setIsOwner(false);
-    setInlineEditMode(false);
-    try {
-      localStorage.removeItem(OWNER_STORAGE_KEY);
-    } catch (e) {
-      console.warn("Could not remove owner auth", e);
-    }
-  };
-
-  const handleSaveData = (newData: SiteData) => {
-    setSiteData(newData);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-    } catch (e) {
-      console.warn("Could not save data to localStorage", e);
-    }
-  };
-
-  const handleResetData = () => {
-    setSiteData(defaultSiteData);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      console.warn("Could not remove data from localStorage", e);
-    }
-  };
-
-  const handleUpdateHeroField = (field: keyof SiteData["hero"], val: string) => {
-    setSiteData((prev) => {
-      const updated = {
-        ...prev,
-        hero: {
-          ...prev.hero,
-          [field]: val,
-        },
-      };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn("Could not sync to localStorage", e);
-      }
-      return updated;
-    });
-  };
-
+  // Track active section on scroll
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ["home", "about", "projects", "blog", "contact"];
+      const sections = ["home", "about", "projects", "blog", "travel", "contact"];
       const scrollPosition = window.scrollY + 200;
 
       for (const sectionId of sections) {
@@ -148,55 +108,64 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-[#0e0e10] text-white selection:bg-[#FF3028] selection:text-white">
-      {/* Navigation Bar: Edit button only visible if isOwner is true */}
+      {/* Public Navigation Bar (isOwner is strictly false for public visitors) */}
       <Navbar
         activeSection={activeSection}
-        isOwner={isOwner}
-        onOpenEditor={() => setIsEditorOpen(true)}
-        onLogoClick={handleToggleOwner}
+        isOwner={false}
       />
 
-      {/* Main Content */}
+      {/* Main Sections */}
       <main>
-        {/* Full Viewport Hero (Exact Reference Recreation & Fixed Portrait) */}
+        {/* Hero Section */}
         <Hero
           heroData={siteData.hero}
-          inlineEditMode={inlineEditMode && isOwner}
-          onUpdateHero={handleUpdateHeroField}
+          inlineEditMode={false}
+          isOwner={false}
         />
 
-        {/* Subsequent Sections */}
+        {/* About Section */}
         <About
           aboutData={siteData.about}
-          inlineEditMode={inlineEditMode && isOwner}
+          inlineEditMode={false}
+          isOwner={false}
         />
+
+        {/* Selected Projects */}
         <Projects
           projectsData={siteData.projects}
-          inlineEditMode={inlineEditMode && isOwner}
+          inlineEditMode={false}
+          isOwner={false}
         />
-        <Blog />
+
+        {/* Engineering Blog */}
+        <Blog
+          blogData={siteData.blog}
+          isOwner={false}
+        />
+
+        {/* Travel Section */}
+        <Travel
+          travelData={siteData.travel}
+          isOwner={false}
+        />
+
+        {/* Contact Section */}
         <Contact
           contactData={siteData.contact}
-          inlineEditMode={inlineEditMode && isOwner}
+          inlineEditMode={false}
+          isOwner={false}
         />
       </main>
 
+      {/* Public Social Dock (No Owner Edit Controls) */}
+      <SocialDock
+        socialLinks={siteData.socialLinks || defaultSiteData.socialLinks}
+        isOwner={false}
+        onUpdateSocialLink={() => {}}
+      />
+
       {/* Footer */}
       <Footer />
-
-      {/* Data & Text Editor (Only Accessible when in Owner Mode) */}
-      {isOwner && (
-        <EditModal
-          data={siteData}
-          isOpen={isEditorOpen}
-          onClose={() => setIsEditorOpen(false)}
-          onSave={handleSaveData}
-          onReset={handleResetData}
-          inlineEditMode={inlineEditMode}
-          onToggleInlineEdit={setInlineEditMode}
-          onExitOwnerMode={handleExitOwnerMode}
-        />
-      )}
     </div>
   );
 }

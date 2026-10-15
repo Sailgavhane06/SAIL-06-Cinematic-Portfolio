@@ -1,10 +1,13 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
+import { Edit3 } from "lucide-react";
 
 interface HeroProps {
   heroData: SiteData["hero"];
   inlineEditMode?: boolean;
+  isOwner?: boolean;
+  onEditSection?: () => void;
   onUpdateHero?: (field: keyof SiteData["hero"], value: string) => void;
   onScrollClick?: () => void;
 }
@@ -12,6 +15,8 @@ interface HeroProps {
 export default function Hero({
   heroData,
   inlineEditMode = false,
+  isOwner = false,
+  onEditSection,
   onUpdateHero,
   onScrollClick,
 }: HeroProps) {
@@ -41,13 +46,27 @@ export default function Hero({
       id="home"
       className="relative w-full h-[100svh] min-h-[660px] max-h-[1100px] overflow-hidden bg-[#0e0e10] flex items-center select-none"
     >
+      {/* Owner-Only Edit Button for Hero */}
+      {isOwner && onEditSection && (
+        <div className="absolute top-24 sm:top-28 right-6 sm:right-12 lg:right-16 z-30 animate-in fade-in">
+          <button
+            onClick={onEditSection}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16161b]/90 hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-lg transition-all cursor-pointer"
+            title="Edit Hero Section (Owner Mode)"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+            <span>Edit Information</span>
+          </button>
+        </div>
+      )}
+
       {/* Background Portrait Plate Container */}
       <div className="absolute inset-0 z-0 flex items-end justify-center pointer-events-none overflow-hidden">
         {/* Responsive portrait wrapper: perfectly fits within viewport with tabletop grounded at bottom and entire head visible */}
         <div className="relative h-[82svh] sm:h-[86svh] md:h-[88svh] lg:h-[90svh] max-h-[820px] w-auto flex items-end justify-center translate-x-[4%] sm:translate-x-[3%] lg:translate-x-[4%] xl:translate-x-[5%]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/sail-portrait.jpg"
+            src={(heroData as unknown as { portraitImage?: string })?.portraitImage || "/sail-portrait.jpg"}
             alt="Sail Gavhane — Creator & Electrical Engineer"
             className="h-full w-auto max-w-none object-contain object-bottom filter contrast-[1.02]"
           />
@@ -135,7 +154,7 @@ export default function Hero({
           </div>
 
           {/* Right Side Tagline: Turning ideas into real-world solutions */}
-          <div className="hidden lg:flex items-center gap-3.5 absolute right-0 top-[40%] -translate-y-1/2">
+          <div className="hidden lg:flex items-center gap-3.5 absolute right-8 xl:right-12 top-[40%] -translate-y-1/2">
             {/* Thin Vertical Red Line */}
             <div className="w-[2px] h-[44px] bg-[#FF3028] shrink-0 rounded-full" />
 

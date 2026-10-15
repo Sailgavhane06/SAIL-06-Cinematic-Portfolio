@@ -1,15 +1,22 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { Mail, MapPin, Send } from "lucide-react";
+import { Mail, MapPin, Send, Edit3 } from "lucide-react";
 import { useState } from "react";
 
 interface ContactProps {
   contactData: SiteData["contact"];
   inlineEditMode?: boolean;
+  isOwner?: boolean;
+  onEditSection?: () => void;
 }
 
-export default function Contact({ contactData, inlineEditMode = false }: ContactProps) {
+export default function Contact({
+  contactData,
+  inlineEditMode = false,
+  isOwner = false,
+  onEditSection,
+}: ContactProps) {
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,12 +38,27 @@ export default function Contact({ contactData, inlineEditMode = false }: Contact
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
           {/* Left Column: Direct info */}
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-[2px] bg-[#FF3028]" />
-              <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
-                GET IN TOUCH
-              </span>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-[2px] bg-[#FF3028]" />
+                <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
+                  GET IN TOUCH
+                </span>
+              </div>
+
+              {/* Owner-Only Edit Button */}
+              {isOwner && onEditSection && (
+                <button
+                  onClick={onEditSection}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
+                  title="Edit Contact Section (Owner Mode)"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Edit Information</span>
+                </button>
+              )}
             </div>
+
             <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight mb-6">
               <span className={editableClass}>{contactData.headingPart1}</span> <br />
               <span className={`text-[#FF3028] ${editableClass}`}>

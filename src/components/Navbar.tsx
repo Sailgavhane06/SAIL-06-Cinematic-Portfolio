@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, X, Edit3 } from "lucide-react";
+import { ArrowRight, Menu, X, Edit3, Plus } from "lucide-react";
 
 interface NavbarProps {
   activeSection?: string;
   isOwner?: boolean;
   onOpenEditor?: () => void;
+  onOpenAdd?: () => void;
   onLogoClick?: () => void;
 }
 
@@ -15,6 +16,7 @@ export default function Navbar({
   activeSection = "home",
   isOwner = false,
   onOpenEditor,
+  onOpenAdd,
   onLogoClick,
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
@@ -29,8 +31,7 @@ export default function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogoSecretClick = (e: React.MouseEvent) => {
-    // Triple click on logo triggers owner mode toggle
+  const handleLogoSecretClick = () => {
     const newCount = logoClickCount + 1;
     setLogoClickCount(newCount);
     if (newCount >= 3) {
@@ -49,6 +50,7 @@ export default function Navbar({
     { name: "About", href: "#about", id: "about" },
     { name: "Projects", href: "#projects", id: "projects" },
     { name: "Blog", href: "#blog", id: "blog" },
+    { name: "Travel", href: "#travel", id: "travel" },
     { name: "Contact", href: "#contact", id: "contact" },
   ];
 
@@ -89,14 +91,14 @@ export default function Navbar({
         </div>
 
         {/* Center: Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 lg:gap-11">
+        <nav className="hidden md:flex items-center gap-6 lg:gap-9">
           {navLinks.map((link) => {
             const isActive = activeSection === link.id;
             return (
               <div key={link.name} className="relative flex flex-col items-center">
                 <Link
                   href={link.href}
-                  className={`text-[14.5px] font-normal tracking-wide transition-colors duration-200 py-1 ${
+                  className={`text-[14px] lg:text-[14.5px] font-normal tracking-wide transition-colors duration-200 py-1 ${
                     isActive
                       ? "text-white font-medium"
                       : "text-zinc-300 hover:text-white"
@@ -113,17 +115,33 @@ export default function Navbar({
           })}
         </nav>
 
-        {/* Right: Pill Button "View My Work" + Edit Text Button (Only for Self/Owner) */}
-        <div className="hidden sm:flex items-center gap-3">
-          {isOwner && onOpenEditor && (
-            <button
-              onClick={onOpenEditor}
-              className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-[#FF3028]/40 hover:border-[#FF3028] px-3 py-2 rounded-full transition-all cursor-pointer animate-in fade-in duration-200"
-              title="Edit Website Data & Text (Owner Mode)"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-              <span className="hidden lg:inline">Edit Text</span>
-            </button>
+        {/* Right: Pill Button "View My Work" + Owner Action Buttons */}
+        <div className="hidden sm:flex items-center gap-2.5">
+          {/* Owner-Only: Edit Information & Add Information Buttons */}
+          {isOwner && (
+            <div className="flex items-center gap-2 animate-in fade-in duration-200">
+              {onOpenAdd && (
+                <button
+                  onClick={onOpenAdd}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#FF3028] hover:bg-[#ff453e] px-3 py-2 rounded-full shadow-[0_0_15px_rgba(255,48,40,0.35)] transition-all cursor-pointer active:scale-95"
+                  title="Add New Project, Blog Article, or Skill (Owner Mode)"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span className="hidden lg:inline">Add Information</span>
+                </button>
+              )}
+
+              {onOpenEditor && (
+                <button
+                  onClick={onOpenEditor}
+                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-[#FF3028]/40 hover:border-[#FF3028] px-3 py-2 rounded-full transition-all cursor-pointer"
+                  title="Edit Website Data & Text (Owner Mode)"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span className="hidden lg:inline">Edit Information</span>
+                </button>
+              )}
+            </div>
           )}
 
           <Link
@@ -138,17 +156,31 @@ export default function Navbar({
           </Link>
         </div>
 
-        {/* Mobile Menu Button & Mobile Edit Button (Only for Self/Owner) */}
+        {/* Mobile Menu Button & Mobile Edit/Add Buttons (Only for Self/Owner) */}
         <div className="flex md:hidden items-center gap-1.5 shrink-0">
-          {isOwner && onOpenEditor && (
-            <button
-              onClick={onOpenEditor}
-              className="p-1.5 text-[#FF3028] hover:text-white transition-colors"
-              aria-label="Edit text"
-              title="Edit text (Owner Mode)"
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
+          {isOwner && (
+            <div className="flex items-center gap-1">
+              {onOpenAdd && (
+                <button
+                  onClick={onOpenAdd}
+                  className="p-1.5 rounded-full bg-[#FF3028] text-white"
+                  aria-label="Add Information"
+                  title="Add Information (Owner Mode)"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onOpenEditor && (
+                <button
+                  onClick={onOpenEditor}
+                  className="p-1.5 text-[#FF3028] hover:text-white transition-colors"
+                  aria-label="Edit Information"
+                  title="Edit Information (Owner Mode)"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           )}
           <Link
             href="#projects"
