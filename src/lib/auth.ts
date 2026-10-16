@@ -6,14 +6,11 @@ import { NextRequest } from "next/server";
 export const COOKIE_NAME = "sail06_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-// Default secret for development, but in production ADMIN_SESSION_SECRET must be set
+// Read the signing key only from the server runtime environment.
 function getSessionSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("ADMIN_SESSION_SECRET environment variable is required in production.");
-    }
-    return "dev_sail06_session_secret_local_only";
+    throw new Error("ADMIN_SESSION_SECRET environment variable is required.");
   }
   return secret;
 }
@@ -79,23 +76,16 @@ export function verifyOwnerCredentials(identifier: string, pass: string): boolea
   const inputId = (identifier || "").trim().toLowerCase();
   const inputPass = pass || "";
 
-  // 1. Configured environment credentials (timing-safe comparison)
+  // Only configured server-side credentials can grant owner access.
   const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const envPassword = process.env.ADMIN_PASSWORD;
 
-  const envMatch = Boolean(
+  return Boolean(
     envEmail &&
     envPassword &&
     timingSafeStringCompare(inputId, envEmail) &&
     timingSafeStringCompare(inputPass, envPassword)
   );
-
-  // 2. Preserve existing username/password login behavior (SAIL@06 / SAIL@07)
-  const explicitMatch =
-    timingSafeStringCompare(inputId, "sail@06") &&
-    timingSafeStringCompare(inputPass, "SAIL@07");
-
-  return envMatch || explicitMatch;
 }
 
 function timingSafeStringCompare(a: string, b: string): boolean {
