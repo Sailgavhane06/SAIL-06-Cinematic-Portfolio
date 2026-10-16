@@ -16,9 +16,8 @@ export async function POST(req: NextRequest) {
 
     const isValid = verifyOwnerCredentials(identifier, password);
     if (!isValid) {
-      // Return 401 with generic message to prevent account enumeration
       return NextResponse.json(
-        { error: "Invalid username or password" },
+        { error: "Invalid credentials. Only sailgavhane06@gmail.com with the valid owner password can access admin editing." },
         { status: 401 }
       );
     }
@@ -29,7 +28,7 @@ export async function POST(req: NextRequest) {
       message: "Authentication successful",
       user: {
         email: identifier.toLowerCase(),
-        username: identifier,
+        username: "Sail Gavhane",
         role: "owner",
       },
     });
