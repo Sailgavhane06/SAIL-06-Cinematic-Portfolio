@@ -14,7 +14,7 @@ export default function AdminHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [userEmail, setUserEmail] = useState("admin@sail06.com");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/me")
@@ -68,7 +68,7 @@ export default function AdminHeader() {
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-xs text-zinc-300">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{userEmail}</span>
+            <span>{userEmail || "Owner"}</span>
             <span className="text-zinc-500 font-mono">(Owner)</span>
           </div>
 

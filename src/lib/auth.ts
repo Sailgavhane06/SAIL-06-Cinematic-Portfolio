@@ -1,6 +1,7 @@
+import "server-only";
 import crypto from "crypto";
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export const COOKIE_NAME = "sail06_admin_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -12,7 +13,7 @@ function getSessionSecret(): string {
     if (process.env.NODE_ENV === "production") {
       throw new Error("ADMIN_SESSION_SECRET environment variable is required in production.");
     }
-    return "dev_sail06_insecure_session_secret_change_in_production_1234567890";
+    return "dev_sail06_session_secret_local_only";
   }
   return secret;
 }
@@ -75,19 +76,26 @@ export function verifyToken(token: string): AdminSession | null {
  * Verify owner credentials securely with timing-safe comparison
  */
 export function verifyOwnerCredentials(identifier: string, pass: string): boolean {
-  const configuredEmail = (process.env.ADMIN_EMAIL || "admin@sail06.com").trim().toLowerCase();
-  const configuredPassword = process.env.ADMIN_PASSWORD || "Sail06Admin2026!";
-
   const inputId = (identifier || "").trim().toLowerCase();
+  const inputPass = pass || "";
 
-  // User explicitly specified credentials: Username SAIL@06 / Password SAIL@07
-  const isExplicitOwner = (inputId === "sail@06" && pass === "SAIL@07");
+  // 1. Configured environment credentials (timing-safe comparison)
+  const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const envPassword = process.env.ADMIN_PASSWORD;
 
-  // Configured environment credentials (timing-safe)
-  const emailMatch = timingSafeStringCompare(inputId, configuredEmail);
-  const passwordMatch = timingSafeStringCompare(pass, configuredPassword);
+  const envMatch = Boolean(
+    envEmail &&
+    envPassword &&
+    timingSafeStringCompare(inputId, envEmail) &&
+    timingSafeStringCompare(inputPass, envPassword)
+  );
 
-  return isExplicitOwner || (emailMatch && passwordMatch);
+  // 2. Preserve existing username/password login behavior (SAIL@06 / SAIL@07)
+  const explicitMatch =
+    timingSafeStringCompare(inputId, "sail@06") &&
+    timingSafeStringCompare(inputPass, "SAIL@07");
+
+  return envMatch || explicitMatch;
 }
 
 function timingSafeStringCompare(a: string, b: string): boolean {
