@@ -131,7 +131,7 @@ export default function ProfileAuthModal({
                 Owner Mode Active
               </div>
               <h2 className="text-2xl font-black text-white tracking-tight">Main Person (Owner)</h2>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">SAIL@06 • Full Editing Access</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">Full Editing Access</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-left text-xs text-zinc-300 space-y-2">

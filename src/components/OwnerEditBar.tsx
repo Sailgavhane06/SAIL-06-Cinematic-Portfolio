@@ -35,7 +35,7 @@ export default function OwnerEditBar({
             title="Owner Profile Details"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-[#FF3028] group-hover:scale-110 transition-transform" />
-            <span>SAIL@06</span>
+            <span>Owner</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </button>
 
