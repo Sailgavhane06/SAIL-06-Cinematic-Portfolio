@@ -447,7 +447,7 @@ function LoginForm() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password (e.g. SAIL@067)"
+                        placeholder="Enter password"
                         className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#FF3028] transition-all font-mono"
                       />
                       <button

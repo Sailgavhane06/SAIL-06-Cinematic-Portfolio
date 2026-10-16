@@ -604,7 +604,7 @@ export default function ProfileAuthModal({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password (e.g. SAIL@067)"
+                    placeholder="Enter password"
                     className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all font-mono"
                   />
                   <button
