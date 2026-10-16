@@ -79,23 +79,16 @@ export function verifyOwnerCredentials(identifier: string, pass: string): boolea
   const inputId = (identifier || "").trim().toLowerCase();
   const inputPass = pass || "";
 
-  // 1. Configured environment credentials (timing-safe comparison)
+  // Credentials are read only on the server at request time.
   const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const envPassword = process.env.ADMIN_PASSWORD;
 
-  const envMatch = Boolean(
+  return Boolean(
     envEmail &&
     envPassword &&
     timingSafeStringCompare(inputId, envEmail) &&
     timingSafeStringCompare(inputPass, envPassword)
   );
-
-  // 2. Preserve existing username/password login behavior (SAIL@06 / SAIL@07)
-  const explicitMatch =
-    timingSafeStringCompare(inputId, "sail@06") &&
-    timingSafeStringCompare(inputPass, "SAIL@07");
-
-  return envMatch || explicitMatch;
 }
 
 function timingSafeStringCompare(a: string, b: string): boolean {

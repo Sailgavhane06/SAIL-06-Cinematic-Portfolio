@@ -157,7 +157,7 @@ export default function Navbar({
             <span className="tracking-tight text-[#111111]">View My Work</span>
           </Link>
 
-          {/* Profile Icon Button: Opens Window to Authenticate SAIL@06 */}
+          {/* Profile button opens owner authentication. */}
           <button
             id="nav-profile-btn"
             onClick={onOpenProfile}
@@ -167,7 +167,7 @@ export default function Navbar({
                 : "bg-[#16161b] hover:bg-[#202028] border border-white/[0.1] hover:border-[#FF3028]/50"
             }`}
             aria-label="Owner Profile"
-            title={isOwner ? "Owner Mode Active (SAIL@06) • Click to manage" : "Owner Profile Sign In"}
+            title={isOwner ? "Owner Mode Active • Click to manage" : "Owner Profile Sign In"}
           >
             <User
               className={`w-4 h-4 transition-colors ${
@@ -192,7 +192,7 @@ export default function Navbar({
                 : "bg-[#16161b] border border-white/[0.1] text-zinc-400"
             }`}
             aria-label="Owner Profile"
-            title={isOwner ? "Owner Mode Active" : "Owner Sign In"}
+            title={isOwner ? "Owner Mode Active • Click to manage" : "Owner Profile Sign In"}
           >
             <User className="w-3.5 h-3.5" />
             {isOwner && (
@@ -292,7 +292,7 @@ export default function Navbar({
                 }`}
               >
                 <User className="w-4 h-4" />
-                <span>{isOwner ? "Owner Profile Active (SAIL@06)" : "Owner Sign In"}</span>
+                <span>{isOwner ? "Owner Profile Active" : "Owner Sign In"}</span>
               </button>
             </div>
 
