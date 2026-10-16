@@ -1,7 +1,7 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { Cpu, Zap, Code, Rocket, CheckCircle2, Edit3, Plus } from "lucide-react";
+import { Cpu, Zap, Code, Rocket, CheckCircle2, Pencil, Plus } from "lucide-react";
 
 interface AboutProps {
   aboutData: SiteData["about"];
@@ -80,11 +80,11 @@ export default function About({
               {onEditSection && (
                 <button
                   onClick={onEditSection}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
-                  title="Edit About Section (Owner Mode)"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#16161b] hover:bg-[#FF3028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-semibold text-white shadow-md transition-all cursor-pointer group active:scale-95"
+                  title="Edit About Data (Owner Only)"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-                  <span>Edit Information</span>
+                  <Pencil className="w-3.5 h-3.5 text-[#FF3028] group-hover:text-white transition-colors" />
+                  <span>Edit About</span>
                 </button>
               )}
             </div>

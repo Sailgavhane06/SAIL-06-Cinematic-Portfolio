@@ -1,7 +1,7 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { Edit3 } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 interface HeroProps {
   heroData: SiteData["hero"];
@@ -46,16 +46,16 @@ export default function Hero({
       id="home"
       className="relative w-full h-[100svh] min-h-[660px] max-h-[1100px] overflow-hidden bg-[#0e0e10] flex items-center select-none"
     >
-      {/* Owner-Only Edit Button for Hero */}
+      {/* Owner-Only Pencil Edit Button for Hero */}
       {isOwner && onEditSection && (
         <div className="absolute top-24 sm:top-28 right-6 sm:right-12 lg:right-16 z-30 animate-in fade-in">
           <button
             onClick={onEditSection}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#16161b]/90 hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-lg transition-all cursor-pointer"
-            title="Edit Hero Section (Owner Mode)"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#16161b]/95 hover:bg-[#FF3028] border border-[#FF3028]/60 hover:border-[#FF3028] text-xs font-semibold text-white shadow-xl shadow-black/50 transition-all duration-200 cursor-pointer group active:scale-95"
+            title="Edit Hero Data (Owner Only)"
           >
-            <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-            <span>Edit Information</span>
+            <Pencil className="w-3.5 h-3.5 text-[#FF3028] group-hover:text-white transition-colors" />
+            <span>Edit Hero</span>
           </button>
         </div>
       )}

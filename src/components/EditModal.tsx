@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { SiteData, defaultSiteData } from "@/data/defaultData";
 import {
-  Edit3,
+  Pencil,
   X,
   Save,
   RotateCcw,
@@ -327,7 +327,7 @@ export default function EditModal({
             <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between bg-[#16161b]">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#FF3028]/15 border border-[#FF3028]/30 flex items-center justify-center text-[#FF3028]">
-                  <Edit3 className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">

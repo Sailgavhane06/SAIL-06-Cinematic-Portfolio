@@ -6,7 +6,7 @@ import ImageUploader from "./ImageUploader";
 import {
   Plus,
   Trash2,
-  Edit2,
+  Pencil,
   Save,
   Loader2,
   Check,
@@ -16,6 +16,9 @@ import {
   Calendar,
   X,
   Compass,
+  Sparkles,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface SectionTravelProps {
@@ -29,22 +32,32 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
   const handleStartCreate = () => {
     const newStory: TravelStory = {
       id: `travel-${Date.now()}`,
       title: "",
+      slug: `expedition-${Date.now()}`,
+      destination: "",
       location: "",
+      travelDate: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
       date: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
+      coverImage: "",
       imageUrl: "",
+      shortDescription: "",
       note: "",
+      fullDescription: "",
       caption: "",
       altText: "",
+      galleryImages: [],
+      featured: (data.stories?.length || 0) === 0,
       order: (data.stories?.length || 0) + 1,
       status: "published",
     };
     setEditingStory(newStory);
     setIsCreating(true);
+    setNewGalleryUrl("");
   };
 
   const handleMove = (index: number, direction: "up" | "down") => {
@@ -70,11 +83,40 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
     }));
   };
 
+  const handleToggleFeatured = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      stories: prev.stories.map((s) => ({
+        ...s,
+        featured: s.id === id,
+      })),
+    }));
+  };
+
   const handleDeleteStory = (id: string) => {
     if (!window.confirm("Are you sure you want to delete this travel story?")) return;
     const filtered = data.stories.filter((s) => s.id !== id);
     const reordered = filtered.map((s, idx) => ({ ...s, order: idx + 1 }));
     setData((prev) => ({ ...prev, stories: reordered }));
+  };
+
+  const handleAddGalleryImage = (urlToAdd: string) => {
+    if (!editingStory || !urlToAdd.trim()) return;
+    const currentList = editingStory.galleryImages || [];
+    setEditingStory({
+      ...editingStory,
+      galleryImages: [...currentList, urlToAdd.trim()],
+    });
+    setNewGalleryUrl("");
+  };
+
+  const handleRemoveGalleryImage = (idxToRemove: number) => {
+    if (!editingStory) return;
+    const currentList = editingStory.galleryImages || [];
+    setEditingStory({
+      ...editingStory,
+      galleryImages: currentList.filter((_, idx) => idx !== idxToRemove),
+    });
   };
 
   const handleSaveModal = (e: React.FormEvent) => {
@@ -86,16 +128,39 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
       return;
     }
 
+    const normalizedStory: TravelStory = {
+      ...editingStory,
+      location: editingStory.destination || editingStory.location,
+      date: editingStory.travelDate || editingStory.date,
+      imageUrl: editingStory.coverImage || editingStory.imageUrl,
+      note: editingStory.shortDescription || editingStory.note,
+      slug:
+        editingStory.slug ||
+        editingStory.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    };
+
     if (isCreating) {
-      setData((prev) => ({
-        ...prev,
-        stories: [...prev.stories, editingStory],
-      }));
+      setData((prev) => {
+        let stories = [...prev.stories];
+        if (normalizedStory.featured) {
+          stories = stories.map((s) => ({ ...s, featured: false }));
+        }
+        return {
+          ...prev,
+          stories: [...stories, normalizedStory],
+        };
+      });
     } else {
-      setData((prev) => ({
-        ...prev,
-        stories: prev.stories.map((s) => (s.id === editingStory.id ? editingStory : s)),
-      }));
+      setData((prev) => {
+        let stories = prev.stories.map((s) => (s.id === normalizedStory.id ? normalizedStory : s));
+        if (normalizedStory.featured) {
+          stories = stories.map((s) => (s.id === normalizedStory.id ? s : { ...s, featured: false }));
+        }
+        return {
+          ...prev,
+          stories,
+        };
+      });
     }
 
     setEditingStory(null);
@@ -229,10 +294,10 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
               </div>
 
               {/* Photo */}
-              {story.imageUrl ? (
+              {story.coverImage || story.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={story.imageUrl}
+                  src={story.coverImage || story.imageUrl}
                   alt={story.altText || story.title}
                   className="w-16 h-16 rounded-xl object-cover shrink-0 border border-white/[0.1]"
                 />
@@ -244,7 +309,7 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
 
               {/* Info */}
               <div>
-                <div className="flex items-center gap-2.5 mb-1">
+                <div className="flex items-center gap-2.5 mb-1 flex-wrap">
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       story.status === "published"
@@ -254,23 +319,44 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
                   >
                     {story.status}
                   </span>
+
+                  {story.featured && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#FF3028]/15 text-[#FF3028] border border-[#FF3028]/30">
+                      <Sparkles className="w-3 h-3" />
+                      Featured
+                    </span>
+                  )}
+
                   <span className="text-xs text-zinc-400 flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-[#FF3028]" />
-                    <span>{story.location}</span>
+                    <span>{story.destination || story.location}</span>
                   </span>
                   <span className="text-zinc-600">•</span>
-                  <span className="text-xs text-zinc-500">{story.date}</span>
+                  <span className="text-xs text-zinc-500">{story.travelDate || story.date}</span>
                 </div>
 
                 <h3 className="text-base font-bold text-white tracking-tight">{story.title}</h3>
                 <p className="text-xs text-zinc-400 line-clamp-1 mt-1 max-w-xl font-light">
-                  {story.note}
+                  {story.shortDescription || story.note}
                 </p>
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+              <button
+                type="button"
+                onClick={() => handleToggleFeatured(story.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  story.featured
+                    ? "bg-[#FF3028] text-white"
+                    : "bg-[#1a1a22] hover:bg-[#252530] text-zinc-300"
+                }`}
+                title="Toggle featured status"
+              >
+                {story.featured ? "Featured ★" : "Set Featured"}
+              </button>
+
               <button
                 type="button"
                 onClick={() => handleToggleStatus(story.id)}
@@ -286,13 +372,21 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
               <button
                 type="button"
                 onClick={() => {
-                  setEditingStory(story);
+                  setEditingStory({
+                    ...story,
+                    destination: story.destination || story.location || "",
+                    travelDate: story.travelDate || story.date || "",
+                    coverImage: story.coverImage || story.imageUrl || "",
+                    shortDescription: story.shortDescription || story.note || "",
+                    fullDescription: story.fullDescription || story.shortDescription || story.note || "",
+                    galleryImages: story.galleryImages || [],
+                  });
                   setIsCreating(false);
                 }}
                 className="p-2 rounded-lg bg-[#1a1a22] hover:bg-[#252530] text-zinc-300 hover:text-white transition-colors cursor-pointer"
                 title="Edit story"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Pencil className="w-3.5 h-3.5 text-[#FF3028]" />
               </button>
 
               <button
@@ -316,7 +410,7 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
               <div className="flex items-center gap-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FF3028]" />
                 <h3 className="text-lg font-bold text-white">
-                  {isCreating ? "Add Travel Story" : "Edit Travel Story"}
+                  {isCreating ? "Add Travel Journey" : "Edit Travel Journey"}
                 </h3>
               </div>
               <button
@@ -328,11 +422,11 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
               </button>
             </div>
 
-            <form onSubmit={handleSaveModal} className="p-6 space-y-5">
+            <form onSubmit={handleSaveModal} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                    Story Title *
+                    Journey Title *
                   </label>
                   <input
                     type="text"
@@ -369,13 +463,17 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                    Location Name
+                    Destination / Location
                   </label>
                   <input
                     type="text"
-                    value={editingStory.location}
+                    value={editingStory.destination || editingStory.location || ""}
                     onChange={(e) =>
-                      setEditingStory({ ...editingStory, location: e.target.value })
+                      setEditingStory({
+                        ...editingStory,
+                        destination: e.target.value,
+                        location: e.target.value,
+                      })
                     }
                     placeholder="e.g. Himalayan Foothills & Passes"
                     className="w-full bg-[#18181f] border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF3028]"
@@ -388,9 +486,13 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
                   </label>
                   <input
                     type="text"
-                    value={editingStory.date}
+                    value={editingStory.travelDate || editingStory.date || ""}
                     onChange={(e) =>
-                      setEditingStory({ ...editingStory, date: e.target.value })
+                      setEditingStory({
+                        ...editingStory,
+                        travelDate: e.target.value,
+                        date: e.target.value,
+                      })
                     }
                     placeholder="e.g. September 2026"
                     className="w-full bg-[#18181f] border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FF3028]"
@@ -400,26 +502,67 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                  Expedition Notes & Story
+                  Short Description / Summary *
                 </label>
                 <textarea
-                  rows={3}
-                  value={editingStory.note}
+                  rows={2}
+                  value={editingStory.shortDescription || editingStory.note || ""}
                   onChange={(e) =>
-                    setEditingStory({ ...editingStory, note: e.target.value })
+                    setEditingStory({
+                      ...editingStory,
+                      shortDescription: e.target.value,
+                      note: e.target.value,
+                    })
                   }
-                  placeholder="Field notes, technical tests performed, or observations..."
+                  placeholder="Summary for cards and homepage showcase..."
                   className="w-full bg-[#18181f] border border-white/[0.1] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#FF3028]"
                 />
               </div>
 
-              {/* Photo Uploader */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                  Full Expedition Log & Details
+                </label>
+                <textarea
+                  rows={4}
+                  value={editingStory.fullDescription || ""}
+                  onChange={(e) =>
+                    setEditingStory({ ...editingStory, fullDescription: e.target.value })
+                  }
+                  placeholder="Detailed field notes, testing methodology, observations for the /travel page..."
+                  className="w-full bg-[#18181f] border border-white/[0.1] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#FF3028]"
+                />
+              </div>
+
+              {/* Featured toggle */}
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#181820] border border-white/[0.08]">
+                <input
+                  type="checkbox"
+                  id="featured-story-checkbox"
+                  checked={editingStory.featured || false}
+                  onChange={(e) =>
+                    setEditingStory({ ...editingStory, featured: e.target.checked })
+                  }
+                  className="w-4 h-4 accent-[#FF3028] cursor-pointer"
+                />
+                <label
+                  htmlFor="featured-story-checkbox"
+                  className="text-xs text-white font-medium cursor-pointer flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Feature as primary showcase on homepage and /travel</span>
+                </label>
+              </div>
+
+              {/* Cover Photograph Uploader */}
               <div className="pt-2 border-t border-white/[0.06] space-y-4">
                 <ImageUploader
-                  label="Expedition Photograph"
-                  currentImageUrl={editingStory.imageUrl}
-                  onImageChange={(url) => setEditingStory({ ...editingStory, imageUrl: url })}
-                  helperText="Upload a landscape photo from your journey."
+                  label="Cover Photograph"
+                  currentImageUrl={editingStory.coverImage || editingStory.imageUrl}
+                  onImageChange={(url) =>
+                    setEditingStory({ ...editingStory, coverImage: url, imageUrl: url })
+                  }
+                  helperText="Upload an immersive landscape photo from your journey."
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -453,6 +596,59 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Multiple Gallery Images Management */}
+              <div className="pt-2 border-t border-white/[0.06] space-y-3">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Multiple Gallery Photographs</span>
+                </label>
+
+                {/* Add new photo input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={newGalleryUrl}
+                    onChange={(e) => setNewGalleryUrl(e.target.value)}
+                    placeholder="Paste image URL to add to journey gallery..."
+                    className="flex-1 bg-[#18181f] border border-white/[0.1] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-[#FF3028]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddGalleryImage(newGalleryUrl)}
+                    className="px-4 py-2 rounded-xl bg-[#202028] hover:bg-[#282834] text-xs font-semibold text-white border border-white/[0.1] cursor-pointer"
+                  >
+                    Add Photo
+                  </button>
+                </div>
+
+                {/* Gallery Preview Thumbnails */}
+                {editingStory.galleryImages && editingStory.galleryImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
+                    {editingStory.galleryImages.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative h-20 rounded-xl overflow-hidden bg-black/40 border border-white/[0.1] group"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={img}
+                          alt={`Gallery photo ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGalleryImage(idx)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center transition-colors cursor-pointer"
+                          title="Remove image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">

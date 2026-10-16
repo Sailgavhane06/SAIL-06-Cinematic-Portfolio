@@ -6,7 +6,7 @@ import ImageUploader from "./ImageUploader";
 import {
   Plus,
   Trash2,
-  Edit2,
+  Pencil,
   Save,
   Loader2,
   Check,
@@ -282,7 +282,7 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
                 className="p-2 rounded-lg bg-[#1a1a22] hover:bg-[#252530] text-zinc-300 hover:text-white transition-colors cursor-pointer"
                 title="Edit project"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Pencil className="w-3.5 h-3.5 text-[#FF3028]" />
               </button>
 
               <button

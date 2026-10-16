@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu, X, Edit3, Plus } from "lucide-react";
+import { ArrowRight, Menu, X, Pencil, Plus, User } from "lucide-react";
 
 interface NavbarProps {
   activeSection?: string;
@@ -10,6 +10,7 @@ interface NavbarProps {
   onOpenEditor?: () => void;
   onOpenAdd?: () => void;
   onLogoClick?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export default function Navbar({
@@ -18,6 +19,7 @@ export default function Navbar({
   onOpenEditor,
   onOpenAdd,
   onLogoClick,
+  onOpenProfile,
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -134,11 +136,11 @@ export default function Navbar({
               {onOpenEditor && (
                 <button
                   onClick={onOpenEditor}
-                  className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white bg-white/[0.05] hover:bg-white/[0.1] border border-[#FF3028]/40 hover:border-[#FF3028] px-3 py-2 rounded-full transition-all cursor-pointer"
-                  title="Edit Website Data & Text (Owner Mode)"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-[#16161b] hover:bg-[#FF3028] border border-[#FF3028]/50 hover:border-[#FF3028] px-3.5 py-2 rounded-full transition-all cursor-pointer group active:scale-95 shadow-md"
+                  title="Edit Portfolio Data (Owner Mode)"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-                  <span className="hidden lg:inline">Edit Information</span>
+                  <Pencil className="w-3.5 h-3.5 text-[#FF3028] group-hover:text-white transition-colors" />
+                  <span className="hidden lg:inline">Edit Data</span>
                 </button>
               )}
             </div>
@@ -154,10 +156,50 @@ export default function Navbar({
             </div>
             <span className="tracking-tight text-[#111111]">View My Work</span>
           </Link>
+
+          {/* Profile Icon Button: Opens Window to Authenticate SAIL@06 */}
+          <button
+            id="nav-profile-btn"
+            onClick={onOpenProfile}
+            className={`relative flex items-center justify-center w-[36px] h-[36px] rounded-full transition-all duration-300 cursor-pointer active:scale-95 group ${
+              isOwner
+                ? "bg-[#1b1718] border border-[#FF3028]/70 shadow-[0_0_12px_rgba(255,48,40,0.35)]"
+                : "bg-[#16161b] hover:bg-[#202028] border border-white/[0.1] hover:border-[#FF3028]/50"
+            }`}
+            aria-label="Owner Profile"
+            title={isOwner ? "Owner Mode Active (SAIL@06) • Click to manage" : "Owner Profile Sign In"}
+          >
+            <User
+              className={`w-4 h-4 transition-colors ${
+                isOwner ? "text-[#FF3028]" : "text-zinc-400 group-hover:text-[#FF3028]"
+              }`}
+            />
+            {isOwner && (
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#0e0e10] rounded-full animate-pulse" />
+            )}
+          </button>
         </div>
 
-        {/* Mobile Menu Button & Mobile Edit/Add Buttons (Only for Self/Owner) */}
+        {/* Mobile Menu Button & Mobile Edit/Add/Profile Buttons */}
         <div className="flex md:hidden items-center gap-1.5 shrink-0">
+          {/* Mobile Profile Icon Button */}
+          <button
+            id="nav-profile-btn-mobile"
+            onClick={onOpenProfile}
+            className={`relative flex items-center justify-center w-7 h-7 rounded-full transition-all cursor-pointer active:scale-95 ${
+              isOwner
+                ? "bg-[#1b1718] border border-[#FF3028]/70 text-[#FF3028]"
+                : "bg-[#16161b] border border-white/[0.1] text-zinc-400"
+            }`}
+            aria-label="Owner Profile"
+            title={isOwner ? "Owner Mode Active" : "Owner Sign In"}
+          >
+            <User className="w-3.5 h-3.5" />
+            {isOwner && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 border border-[#0e0e10] rounded-full" />
+            )}
+          </button>
+
           {isOwner && (
             <div className="flex items-center gap-1">
               {onOpenAdd && (
@@ -177,7 +219,7 @@ export default function Navbar({
                   aria-label="Edit Information"
                   title="Edit Information (Owner Mode)"
                 >
-                  <Edit3 className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -230,11 +272,29 @@ export default function Navbar({
                   }}
                   className="flex items-center justify-center gap-2 bg-[#1b1b22] border border-[#FF3028]/40 text-white font-medium text-[13px] py-2 px-4 rounded-xl w-full"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-                  <span>Edit Website Text (Owner Mode)</span>
+                  <Pencil className="w-3.5 h-3.5 text-[#FF3028]" />
+                  <span>Edit Data (Owner Mode)</span>
                 </button>
               </div>
             )}
+
+            {/* Profile Sign In / Owner Status inside Mobile Drawer */}
+            <div className="pt-2 border-t border-white/[0.08]">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenProfile) onOpenProfile();
+                }}
+                className={`flex items-center justify-center gap-2 font-medium text-[13px] py-2.5 px-4 rounded-xl w-full transition-all cursor-pointer ${
+                  isOwner
+                    ? "bg-[#1b1718] border border-[#FF3028]/40 text-[#FF3028]"
+                    : "bg-[#181820] border border-white/[0.08] text-zinc-300 hover:text-white"
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span>{isOwner ? "Owner Profile Active (SAIL@06)" : "Owner Sign In"}</span>
+              </button>
+            </div>
 
             <div className="pt-2">
               <Link

@@ -65,6 +65,16 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadData();
+
+    // Check for ?tab= query parameter to deep-link directly to that section
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") as AdminTab;
+      const validTabs: AdminTab[] = ["about", "engineering", "founder", "blog", "projects", "travel", "contact"];
+      if (tab && validTabs.includes(tab)) {
+        setActiveTab(tab);
+      }
+    } catch (e) {}
   }, []);
 
   // Save specific section

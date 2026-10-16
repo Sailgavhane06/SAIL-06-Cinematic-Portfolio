@@ -98,14 +98,24 @@ export interface ProjectItem {
 export interface TravelStory {
   id: string;
   title: string;
-  location: string;
-  date: string;
-  imageUrl: string;
-  note: string;
+  slug?: string;
+  destination: string;
+  location?: string; // Backwards compatibility
+  travelDate: string;
+  date?: string; // Backwards compatibility
+  coverImage: string;
+  imageUrl?: string; // Backwards compatibility
+  shortDescription: string;
+  note?: string; // Backwards compatibility
+  fullDescription?: string;
   caption?: string;
   altText?: string;
+  galleryImages?: string[];
+  featured?: boolean;
   order: number;
   status: PublicationStatus;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TravelContent {

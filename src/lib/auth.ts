@@ -74,17 +74,20 @@ export function verifyToken(token: string): AdminSession | null {
 /**
  * Verify owner credentials securely with timing-safe comparison
  */
-export function verifyOwnerCredentials(email: string, pass: string): boolean {
+export function verifyOwnerCredentials(identifier: string, pass: string): boolean {
   const configuredEmail = (process.env.ADMIN_EMAIL || "admin@sail06.com").trim().toLowerCase();
   const configuredPassword = process.env.ADMIN_PASSWORD || "Sail06Admin2026!";
 
-  const inputEmail = email.trim().toLowerCase();
+  const inputId = (identifier || "").trim().toLowerCase();
 
-  // Normalize buffers for timing safe check
-  const emailMatch = timingSafeStringCompare(inputEmail, configuredEmail);
+  // User explicitly specified credentials: Username SAIL@06 / Password SAIL@07
+  const isExplicitOwner = (inputId === "sail@06" && pass === "SAIL@07");
+
+  // Configured environment credentials (timing-safe)
+  const emailMatch = timingSafeStringCompare(inputId, configuredEmail);
   const passwordMatch = timingSafeStringCompare(pass, configuredPassword);
 
-  return emailMatch && passwordMatch;
+  return isExplicitOwner || (emailMatch && passwordMatch);
 }
 
 function timingSafeStringCompare(a: string, b: string): boolean {

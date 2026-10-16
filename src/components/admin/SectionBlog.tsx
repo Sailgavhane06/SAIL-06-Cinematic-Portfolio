@@ -6,7 +6,7 @@ import ImageUploader from "./ImageUploader";
 import {
   Plus,
   Trash2,
-  Edit2,
+  Pencil,
   Eye,
   Save,
   Loader2,
@@ -270,7 +270,7 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
                 className="p-2 rounded-lg bg-[#1a1a22] hover:bg-[#252530] text-zinc-300 hover:text-white transition-colors"
                 title="Edit post details"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Pencil className="w-3.5 h-3.5 text-[#FF3028]" />
               </button>
 
               <button

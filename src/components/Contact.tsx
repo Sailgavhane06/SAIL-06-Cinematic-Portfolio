@@ -1,7 +1,7 @@
 "use client";
 
 import { SiteData } from "@/data/defaultData";
-import { Mail, MapPin, Send, Edit3 } from "lucide-react";
+import { Mail, MapPin, Send, Pencil } from "lucide-react";
 import { useState } from "react";
 
 interface ContactProps {
@@ -46,15 +46,15 @@ export default function Contact({
                 </span>
               </div>
 
-              {/* Owner-Only Edit Button */}
+              {/* Owner-Only Pencil Edit Button */}
               {isOwner && onEditSection && (
                 <button
                   onClick={onEditSection}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16161b] hover:bg-[#202028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-medium text-white shadow-md transition-all cursor-pointer"
-                  title="Edit Contact Section (Owner Mode)"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#16161b] hover:bg-[#FF3028] border border-[#FF3028]/50 hover:border-[#FF3028] text-xs font-semibold text-white shadow-md transition-all cursor-pointer group active:scale-95"
+                  title="Edit Contact Data (Owner Only)"
                 >
-                  <Edit3 className="w-3.5 h-3.5 text-[#FF3028]" />
-                  <span>Edit Information</span>
+                  <Pencil className="w-3.5 h-3.5 text-[#FF3028] group-hover:text-white transition-colors" />
+                  <span>Edit Contact</span>
                 </button>
               )}
             </div>

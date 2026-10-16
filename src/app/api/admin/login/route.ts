@@ -4,30 +4,32 @@ import { verifyOwnerCredentials, createAdminSession, COOKIE_NAME } from "@/lib/a
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password } = body;
+    const { email, username, password } = body;
+    const identifier = (username || email || "").trim();
 
-    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+    if (!identifier || !password || typeof identifier !== "string" || typeof password !== "string") {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Username and password are required" },
         { status: 400 }
       );
     }
 
-    const isValid = verifyOwnerCredentials(email, password);
+    const isValid = verifyOwnerCredentials(identifier, password);
     if (!isValid) {
       // Return 401 with generic message to prevent account enumeration
       return NextResponse.json(
-        { error: "Invalid email or password" },
+        { error: "Invalid username or password" },
         { status: 401 }
       );
     }
 
-    const sessionToken = createAdminSession(email);
+    const sessionToken = createAdminSession(identifier);
     const response = NextResponse.json({
       success: true,
       message: "Authentication successful",
       user: {
-        email: email.trim().toLowerCase(),
+        email: identifier.toLowerCase(),
+        username: identifier,
         role: "owner",
       },
     });
