@@ -60,7 +60,7 @@ function LoginForm() {
       const res = await fetch("/api/admin/google-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() || undefined }),
       });
 
       const data = await res.json();
@@ -94,7 +94,10 @@ function LoginForm() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: email.trim() || undefined,
+          password,
+        }),
       });
 
       const data = await res.json();

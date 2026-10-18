@@ -12,7 +12,7 @@
     "experienceYears": "5+",
     "experienceLine1": "building projects, sharing learnings",
     "experienceLine2": "and creating impact.",
-    "portraitImage": "/uploads/c8c3ef54-e4e1-4969-89e6-dd677f9028dd.jpg"
+    "portraitImage": ""
   },
   "about": {
     "quotePart1": "I don't just learn things.",
@@ -301,7 +301,9 @@
         "fullDescription": "Along the Pacific rim, wave action and constant marine fog create one of nature's harshest corrosion testing environments. We evaluated non-invasive tidal current meters and tested conformal hydrophobic coatings against airborne saline corrosion on sensitive RF circuits.",
         "caption": "Marine research outpost testing anti-corrosion materials.",
         "altText": "Sunny ocean coast with rocky cliff formations",
-        "galleryImages": [],
+        "galleryImages": [
+          "/uploads/5047d63b-a374-4a69-b93f-cdd1a6987934.png"
+        ],
         "featured": false,
         "order": 2,
         "status": "published"
@@ -383,5 +385,5 @@
       }
     }
   },
-  "lastUpdated": "2026-10-18T07:23:37.332Z"
+  "lastUpdated": "2026-10-18T09:04:35.918Z"
 }

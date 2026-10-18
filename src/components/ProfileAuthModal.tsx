@@ -87,7 +87,7 @@ export default function ProfileAuthModal({
       const res = await fetch("/api/admin/google-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() || undefined }),
       });
 
       const data = await res.json();
@@ -123,7 +123,7 @@ export default function ProfileAuthModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
+          email: email.trim() || undefined,
           password: password,
         }),
       });

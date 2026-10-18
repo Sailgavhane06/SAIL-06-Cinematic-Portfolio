@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyOwnerCredentials, createAdminSession, COOKIE_NAME } from "@/lib/auth";
+import { verifyOwnerCredentials, createAdminSession, COOKIE_NAME, getAuthorizedOwnerEmail } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { email, username, password } = body;
-    const identifier = (username || email || "").trim();
+    const identifier = (username || email || getAuthorizedOwnerEmail()).trim();
 
-    if (!identifier || !password || typeof identifier !== "string" || typeof password !== "string") {
+    if (!password || typeof password !== "string") {
       return NextResponse.json(
-        { error: "Username and password are required" },
+        { error: "Password is required" },
         { status: 400 }
       );
     }

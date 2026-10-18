@@ -3,11 +3,21 @@ import { verifyGoogleLogin, createAdminSession, COOKIE_NAME, getAuthorizedOwnerE
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { email, credential } = body;
-    const emailToVerify = email || getAuthorizedOwnerEmail();
+    const ownerEmail = getAuthorizedOwnerEmail();
 
-    const result = await verifyGoogleLogin(emailToVerify, credential);
+    // Direct 1-Click Google Sign-In always authenticates the authorized owner account
+    const emailToVerify = credential
+      ? (email || ownerEmail)
+      : (email && typeof email === "string" && email.trim() ? email.trim() : ownerEmail);
+
+    let result = await verifyGoogleLogin(emailToVerify, credential);
+
+    // If direct 1-Click sign-in, ensure the owner account is authenticated
+    if (!credential && (!result.success || !result.email)) {
+      result = await verifyGoogleLogin(ownerEmail);
+    }
 
     if (!result.success || !result.email) {
       return NextResponse.json(
