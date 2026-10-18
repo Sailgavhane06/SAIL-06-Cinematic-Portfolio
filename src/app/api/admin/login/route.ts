@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const isValid = verifyOwnerCredentials(identifier, password);
     if (!isValid) {
       return NextResponse.json(
-        { error: "Invalid credentials. Only the authorized owner account can access admin editing." },
+        { error: "Invalid credentials. Please enter the correct admin password." },
         { status: 401 }
       );
     }
@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
     const sessionToken = createAdminSession(ownerEmail);
     const response = NextResponse.json({
       success: true,
-      message: "Authentication successful",
+      message: "Admin authentication successful",
       user: {
         email: ownerEmail,
         username: "Sail Gavhane",
-        role: "owner",
+        role: "admin",
       },
     });
 

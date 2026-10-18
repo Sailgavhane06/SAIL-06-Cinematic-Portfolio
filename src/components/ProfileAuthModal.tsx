@@ -290,10 +290,10 @@ export default function ProfileAuthModal({
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold tracking-wide uppercase mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                Owner Mode Active
+                Admin Mode Active
               </div>
               <h2 className="text-2xl font-black text-white tracking-tight">Sail Gavhane</h2>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">{email || "Owner Account"} • Full Editing Access</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">{email || "Admin Account"} • Full Editing Access</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-left text-xs text-zinc-300 space-y-2">
@@ -307,7 +307,7 @@ export default function ProfileAuthModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">Authorized Account:</span>
-                <span className="text-white font-mono truncate max-w-[200px]">{email || "Verified Owner"}</span>
+                <span className="text-white font-mono truncate max-w-[200px]">{email || "Verified Admin"}</span>
               </div>
             </div>
 
@@ -351,7 +351,7 @@ export default function ProfileAuthModal({
               </button>
               <div>
                 <h2 className="text-xl font-black text-white tracking-tight">Password Reset OTP</h2>
-                <p className="text-xs text-zinc-400">Target: {email || "Registered Owner Account"}</p>
+                <p className="text-xs text-zinc-400">Target: {email || "Registered Admin Account"}</p>
               </div>
             </div>
 
@@ -376,7 +376,7 @@ export default function ProfileAuthModal({
                     Click the button below to generate a secure 6-digit OTP code to your registered Gmail account:
                   </p>
                   <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                    {email || "Registered Owner Gmail"}
+                    {email || "Registered Admin Gmail"}
                   </div>
                 </div>
 
@@ -432,7 +432,7 @@ export default function ProfileAuthModal({
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
-                    New Owner Password
+                    New Admin Password
                   </label>
                   <div className="relative">
                     <input
@@ -501,9 +501,9 @@ export default function ProfileAuthModal({
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#1a1a22] border border-[#FF3028]/40 shadow-[0_0_20px_rgba(255,48,40,0.2)] text-[#FF3028] mb-3">
                 <ShieldCheck className="w-7 h-7" />
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight">Owner Authentication</h2>
+              <h2 className="text-2xl font-black text-white tracking-tight">Admin Authentication</h2>
               <p className="text-xs text-zinc-400 mt-1">
-                Access portfolio editing via Google Account or Owner Password.
+                Access portfolio editing via Admin ID & Password or Google Account.
               </p>
             </div>
 
@@ -563,7 +563,7 @@ export default function ProfileAuthModal({
                 )}
               </button>
               <div className="text-center text-[10px] text-zinc-500 font-mono">
-                Direct login for verified owner account
+                Direct login for verified admin account
               </div>
             </div>
 
@@ -571,32 +571,31 @@ export default function ProfileAuthModal({
             <div className="relative flex items-center justify-center mb-5">
               <div className="w-full border-t border-white/[0.08]" />
               <span className="absolute bg-[#121217] px-3 text-[10px] uppercase font-mono tracking-wider text-zinc-500">
-                Or with Owner Password
+                Or with Admin Password
               </span>
             </div>
 
             {/* PASSWORD FORM */}
             <form onSubmit={handleSubmitPassword} className="space-y-4">
-              {/* Email Input */}
+              {/* Admin ID / Email Input */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-                    Owner Email
+                    Admin ID / Email
                   </label>
-                  <span className="text-[10px] text-zinc-500 font-mono">Owner Account</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">Admin Portal</span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
-                    id="owner-auth-email"
-                    name="email"
-                    type="email"
-                    required
+                    id="admin-auth-id"
+                    name="identifier"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter owner email"
+                    placeholder="Enter Admin ID or Email (e.g. admin)"
                     className="w-full bg-[#181820] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono"
                   />
                 </div>
@@ -632,7 +631,7 @@ export default function ProfileAuthModal({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
+                    placeholder="Enter admin password"
                     className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all font-mono"
                   />
                   <button
@@ -668,7 +667,7 @@ export default function ProfileAuthModal({
 
             <div className="mt-5 text-center">
               <p className="text-[11px] text-zinc-500 font-mono">
-                Authorized Owner Access Only
+                Authorized Admin Access Only
               </p>
             </div>
           </div>

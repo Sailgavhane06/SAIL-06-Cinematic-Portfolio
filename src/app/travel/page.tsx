@@ -167,7 +167,8 @@ export default function TravelPage() {
     fetch("/api/admin/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && data.authenticated && data.user?.role === "owner") {
+        const isValidRole = data?.user?.role === "admin" || data?.user?.role === "owner";
+        if (data && data.authenticated && isValidRole) {
           setIsOwner(true);
         }
       })

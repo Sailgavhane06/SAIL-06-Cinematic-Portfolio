@@ -13,15 +13,6 @@ export async function POST(req: NextRequest) {
     const { email, otp, newPassword, challengeToken } = body;
     const ownerEmail = getAuthorizedOwnerEmail();
 
-    const requestedEmail = (email || "").trim().toLowerCase();
-    const allowed = [ownerEmail.toLowerCase(), "sail06", "sail", "admin", "owner", ""];
-    if (requestedEmail && !allowed.includes(requestedEmail)) {
-      return NextResponse.json(
-        { error: "Access Denied: Only the registered owner password can be updated." },
-        { status: 403 }
-      );
-    }
-
     if (!otp || typeof otp !== "string" || !newPassword || typeof newPassword !== "string") {
       return NextResponse.json(
         { error: "Both the 6-digit OTP code and a new password are required." },
@@ -47,7 +38,7 @@ export async function POST(req: NextRequest) {
       user: {
         email: ownerEmail,
         username: "Sail Gavhane",
-        role: "owner",
+        role: "admin",
       },
     });
 

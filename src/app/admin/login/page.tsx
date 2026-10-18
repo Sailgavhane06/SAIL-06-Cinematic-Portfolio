@@ -244,10 +244,10 @@ function LoginForm() {
               <ShieldCheck className="w-7 h-7" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Owner Administration
+              Admin Authentication
             </h1>
             <p className="mt-2 text-sm text-zinc-400">
-              Sign in with your verified Google Account or Owner Password.
+              Sign in with Admin ID & Password or Google Account.
             </p>
           </div>
 
@@ -285,7 +285,7 @@ function LoginForm() {
                   </button>
                   <div>
                     <h2 className="text-lg font-bold text-white tracking-tight">Reset Password with OTP</h2>
-                    <p className="text-xs text-zinc-400">Target: {email || "Authorized Owner Account"}</p>
+                    <p className="text-xs text-zinc-400">Target: {email || "Authorized Admin Account"}</p>
                   </div>
                 </div>
 
@@ -293,10 +293,10 @@ function LoginForm() {
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
                       <p className="text-zinc-400">
-                        Click below to generate and send a 6-digit OTP code to your registered owner Gmail address:
+                        Click below to generate and send a 6-digit OTP code to your registered admin Gmail address:
                       </p>
                       <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                        {email || "Registered Owner Gmail"}
+                        {email || "Registered Admin Gmail"}
                       </div>
                     </div>
 
@@ -338,7 +338,7 @@ function LoginForm() {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                        New Owner Password
+                        New Admin Password
                       </label>
                       <div className="relative">
                         <input
@@ -421,32 +421,31 @@ function LoginForm() {
                     )}
                   </button>
                   <div className="text-center text-[10px] text-zinc-500 font-mono">
-                    Direct access for verified owner account
+                    Direct access for verified admin account
                   </div>
                 </div>
 
                 <div className="relative flex items-center justify-center mb-6">
                   <div className="w-full border-t border-white/[0.08]" />
                   <span className="absolute bg-[#121216] px-3 text-[10px] uppercase font-mono tracking-wider text-zinc-500">
-                    Or with Owner Password
+                    Or with Admin Password
                   </span>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                      Owner Account Email
+                      Admin ID / Email
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input
-                        type="email"
-                        required
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="owner@domain.com"
+                        placeholder="Enter Admin ID or Email (e.g. admin)"
                         className="w-full bg-[#18181e] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-3 text-sm font-mono outline-none"
                       />
                     </div>
@@ -478,7 +477,7 @@ function LoginForm() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
+                        placeholder="Enter admin password"
                         className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#FF3028] transition-all font-mono"
                       />
                       <button

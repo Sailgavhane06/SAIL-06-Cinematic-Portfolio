@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (!result.success || !result.email) {
       return NextResponse.json(
-        { error: result.error || "Access Denied: Only the authorized owner account can sign in." },
+        { error: result.error || "Access Denied: Only the authorized admin account can sign in." },
         { status: 403 }
       );
     }
@@ -29,11 +29,11 @@ export async function POST(req: NextRequest) {
     const sessionToken = createAdminSession(result.email);
     const response = NextResponse.json({
       success: true,
-      message: "Google Sign-In successful. Welcome, Sail!",
+      message: "Admin Google Sign-In successful. Welcome, Sail!",
       user: {
         email: result.email,
         username: "Sail Gavhane",
-        role: "owner",
+        role: "admin",
       },
     });
 

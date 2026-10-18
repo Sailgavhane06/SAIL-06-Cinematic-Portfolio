@@ -7,17 +7,7 @@ export async function POST(req: NextRequest) {
     const requestedEmail = (body.email || "").trim().toLowerCase();
     const ownerEmail = getAuthorizedOwnerEmail();
 
-    // If an email was provided in the request body, ensure it is the authorized owner email or alias
-    const allowed = [ownerEmail.toLowerCase(), "sail06", "sail", "admin", "owner", ""];
-    if (requestedEmail && !allowed.includes(requestedEmail)) {
-      return NextResponse.json(
-        {
-          error: "Access Denied: Password reset OTP is only available for the registered owner email.",
-        },
-        { status: 403 }
-      );
-    }
-
+    // Always send OTP to the registered admin email
     const result = await generateAndSendOtp();
 
     const response = NextResponse.json({

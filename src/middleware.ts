@@ -32,7 +32,8 @@ export function middleware(request: NextRequest) {
       const payload = JSON.parse(json);
       const now = Math.floor(Date.now() / 1000);
 
-      if (!payload.exp || payload.exp < now || payload.role !== "owner") {
+      const isValidRole = payload.role === "admin" || payload.role === "owner";
+      if (!payload.exp || payload.exp < now || !isValidRole) {
         const loginUrl = new URL("/admin/login", request.url);
         loginUrl.searchParams.set("next", pathname);
         const response = NextResponse.redirect(loginUrl);

@@ -154,7 +154,7 @@ export function verifyOtpChallengeToken(token: string, inputOtp: string): boolea
 
 export interface AdminSession {
   email: string;
-  role: "owner";
+  role: "owner" | "admin";
   iat: number;
   exp: number;
 }
@@ -196,12 +196,8 @@ export function verifyToken(token: string): AdminSession | null {
       return null;
     }
 
-    const ownerEmail = getAuthorizedOwnerEmail().toLowerCase();
-    const isOwnerEmail =
-      payload.email.toLowerCase() === ownerEmail ||
-      ["sail06", "admin"].includes(payload.email.toLowerCase());
-
-    if (payload.role !== "owner" || !isOwnerEmail) {
+    const isValidRole = payload.role === "admin" || payload.role === "owner";
+    if (!isValidRole) {
       return null;
     }
 
@@ -229,24 +225,7 @@ export function timingSafeStringCompare(a: string, b: string): boolean {
  * Verify owner credentials for Email + Password login.
  */
 export function verifyOwnerCredentials(identifier: string, pass: string): boolean {
-  const inputId = (identifier || "").trim().toLowerCase();
   const inputPass = pass || "";
-  const ownerEmail = getAuthorizedOwnerEmail().toLowerCase();
-
-  const allowedIdentifiers = [
-    ownerEmail,
-    "sail06",
-    "sail",
-    "admin",
-    "owner",
-    "sail gavhane",
-    "",
-  ];
-
-  const isIdentifierMatch = allowedIdentifiers.includes(inputId) || inputId === ownerEmail;
-  if (!isIdentifierMatch) {
-    return false;
-  }
 
   // Verify against active password (custom password via OTP or env)
   const expectedPassword = getActiveOwnerPassword();
@@ -563,11 +542,12 @@ export async function verifyOtpAndUpdatePassword(
 /**
  * Create admin session and return signed token
  */
-export function createAdminSession(email: string): string {
+export function createAdminSession(email?: string): string {
   const now = Math.floor(Date.now() / 1000);
+  const targetEmail = (email || getAuthorizedOwnerEmail()).trim().toLowerCase();
   const session: AdminSession = {
-    email: email.trim().toLowerCase(),
-    role: "owner",
+    email: targetEmail,
+    role: "admin",
     iat: now,
     exp: now + SESSION_DURATION_SECONDS,
   };

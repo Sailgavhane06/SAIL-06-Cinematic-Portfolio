@@ -32,10 +32,10 @@ export default function OwnerEditBar({
           <button
             onClick={onOpenProfile}
             className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#1b1718] border border-[#FF3028]/50 text-white font-mono font-bold hover:bg-[#281c1c] transition-colors cursor-pointer group"
-            title="Owner Profile Details"
+            title="Admin Profile Details"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-[#FF3028] group-hover:scale-110 transition-transform" />
-            <span className="truncate max-w-[170px] sm:max-w-none">Owner Mode Active</span>
+            <span className="truncate max-w-[170px] sm:max-w-none">Admin Mode Active</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
           </button>
 
