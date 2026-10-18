@@ -35,7 +35,7 @@ export default function OwnerEditBar({
             title="Owner Profile Details"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-[#FF3028] group-hover:scale-110 transition-transform" />
-            <span className="truncate max-w-[170px] sm:max-w-none">sailgavhane06@gmail.com</span>
+            <span className="truncate max-w-[170px] sm:max-w-none">Owner Mode Active</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
           </button>
 

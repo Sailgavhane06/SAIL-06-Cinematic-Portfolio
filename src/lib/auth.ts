@@ -154,7 +154,7 @@ export function verifyToken(token: string): AdminSession | null {
       return null;
     }
 
-    if (payload.role !== "owner" || payload.email.toLowerCase() !== AUTHORIZED_OWNER_EMAIL) {
+    if (payload.role !== "owner" || payload.email.toLowerCase() !== getAuthorizedOwnerEmail().toLowerCase()) {
       return null;
     }
 
@@ -180,14 +180,13 @@ export function timingSafeStringCompare(a: string, b: string): boolean {
 
 /**
  * Verify owner credentials for Email + Password login.
- * Strictly verifies email === sailgavhane06@gmail.com and password === SAIL@067 (or custom updated password).
  */
 export function verifyOwnerCredentials(identifier: string, pass: string): boolean {
   const inputEmail = (identifier || "").trim().toLowerCase();
   const inputPass = pass || "";
 
-  // Strictly check that the email is sailgavhane06@gmail.com
-  const isEmailMatch = timingSafeStringCompare(inputEmail, AUTHORIZED_OWNER_EMAIL);
+  // Strictly check that the email matches authorized owner email
+  const isEmailMatch = timingSafeStringCompare(inputEmail, getAuthorizedOwnerEmail());
   if (!isEmailMatch) {
     return false;
   }
@@ -208,13 +207,13 @@ export function verifyOwnerCredentials(identifier: string, pass: string): boolea
 
 /**
  * Verify Google Sign-In:
- * Directly verifies email is sailgavhane06@gmail.com or decodes Google ID token credential.
+ * Directly verifies email or decodes Google ID token credential.
  */
 export async function verifyGoogleLogin(
   email: string,
   credentialToken?: string
 ): Promise<{ success: boolean; email?: string; error?: string }> {
-  const targetEmail = AUTHORIZED_OWNER_EMAIL;
+  const targetEmail = getAuthorizedOwnerEmail();
 
   // 1. If Google ID token JWT credential is provided
   if (credentialToken) {
@@ -225,10 +224,10 @@ export async function verifyGoogleLogin(
         const payload = JSON.parse(payloadJson);
         const googleEmail = (payload.email || "").trim().toLowerCase();
 
-        if (googleEmail !== targetEmail) {
+        if (googleEmail !== targetEmail.toLowerCase()) {
           return {
             success: false,
-            error: `Access Denied: Google account (${googleEmail}) is not authorized. Only ${targetEmail} has owner editing rights.`,
+            error: "Access Denied: Google account is not authorized for owner editing.",
           };
         }
         return { success: true, email: targetEmail };
@@ -246,12 +245,12 @@ export async function verifyGoogleLogin(
 
   return {
     success: false,
-    error: `Access Denied: Only the authorized owner (${targetEmail}) can sign in with Google.`,
+    error: "Access Denied: Only the authorized owner account can sign in with Google.",
   };
 }
 
 /**
- * Generate a 6-digit OTP and send to sailgavhane06@gmail.com
+ * Generate a 6-digit OTP and send to authorized owner email
  */
 export async function generateAndSendOtp(): Promise<{
   success: boolean;
@@ -261,14 +260,15 @@ export async function generateAndSendOtp(): Promise<{
   // Generate a random 6-digit numeric OTP
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  const ownerEmail = getAuthorizedOwnerEmail();
 
   saveAuthStore({ otpCode, otpExpiresAt: expiresAt });
 
-  console.log(`[SAIL-06 AUTH OTP] Verification code for ${AUTHORIZED_OWNER_EMAIL}: ${otpCode}`);
+  console.log(`[SAIL-06 AUTH OTP] Verification code generated: ${otpCode}`);
 
   // Send real email via SMTP if credentials are configured in environment
   const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
-  const smtpUser = process.env.SMTP_USER || AUTHORIZED_OWNER_EMAIL;
+  const smtpUser = process.env.SMTP_USER || ownerEmail;
 
   let emailDelivered = false;
 
@@ -284,14 +284,14 @@ export async function generateAndSendOtp(): Promise<{
 
       await transporter.sendMail({
         from: `"SAIL.06 Security" <${smtpUser}>`,
-        to: AUTHORIZED_OWNER_EMAIL,
+        to: ownerEmail,
         subject: `Your SAIL.06 Password Reset Code: ${otpCode}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0b0e; color: #ffffff; padding: 32px; border-radius: 16px; max-width: 500px; margin: auto; border: 1px solid rgba(255,255,255,0.1);">
             <div style="color: #FF3028; font-weight: 900; font-size: 20px; letter-spacing: 2px; margin-bottom: 24px;">SAIL.06 SECURITY</div>
             <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #ffffff;">Admin Password Reset Code</h2>
             <p style="color: #a1a1aa; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-              You requested to reset or change your admin editing password for <strong>${AUTHORIZED_OWNER_EMAIL}</strong>. Use the 6-digit verification code below:
+              You requested to reset or change your admin editing password. Use the 6-digit verification code below:
             </p>
             <div style="background-color: #181820; border: 1px solid rgba(255,48,40,0.4); padding: 18px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
               <span style="font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #FF3028;">${otpCode}</span>
@@ -309,8 +309,8 @@ export async function generateAndSendOtp(): Promise<{
   }
 
   const message = emailDelivered
-    ? `6-digit OTP sent to ${AUTHORIZED_OWNER_EMAIL}. Please check your inbox.`
-    : `6-digit OTP generated for ${AUTHORIZED_OWNER_EMAIL}. (Valid for 10 minutes)`;
+    ? "6-digit OTP sent to registered owner email. Please check your inbox."
+    : "6-digit OTP generated for registered owner email. (Valid for 10 minutes)";
 
   return {
     success: true,
@@ -366,7 +366,7 @@ export async function verifyOtpAndUpdatePassword(
     otpExpiresAt: undefined,
   });
 
-  console.log(`[SAIL-06 AUTH] Password updated successfully for ${AUTHORIZED_OWNER_EMAIL}`);
+  console.log("[SAIL-06 AUTH] Password updated successfully.");
 
   return {
     success: true,
