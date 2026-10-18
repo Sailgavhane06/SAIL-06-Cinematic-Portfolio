@@ -12,7 +12,7 @@
     "experienceYears": "5+",
     "experienceLine1": "building projects, sharing learnings",
     "experienceLine2": "and creating impact.",
-    "portraitImage": "/uploads/a66fc2f1-69fa-4f4a-b225-f3f5bfc73cf7.png"
+    "portraitImage": "/uploads/c8c3ef54-e4e1-4969-89e6-dd677f9028dd.jpg"
   },
   "about": {
     "quotePart1": "I don't just learn things.",
@@ -294,17 +294,14 @@
         "location": "Pacific Coastline Expeditions",
         "travelDate": "July 2026",
         "date": "July 2026",
-        "coverImage": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=85",
-        "imageUrl": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=85",
+        "coverImage": "/uploads/5047d63b-a374-4a69-b93f-cdd1a6987934.png",
+        "imageUrl": "/uploads/5047d63b-a374-4a69-b93f-cdd1a6987934.png",
         "shortDescription": "Studying coastal microclimates, tidal power installations, and lightweight saltwater-resistant materials.",
         "note": "Studying coastal microclimates, tidal power installations, and lightweight saltwater-resistant materials.",
         "fullDescription": "Along the Pacific rim, wave action and constant marine fog create one of nature's harshest corrosion testing environments. We evaluated non-invasive tidal current meters and tested conformal hydrophobic coatings against airborne saline corrosion on sensitive RF circuits.",
         "caption": "Marine research outpost testing anti-corrosion materials.",
         "altText": "Sunny ocean coast with rocky cliff formations",
-        "galleryImages": [
-          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
-          "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=80"
-        ],
+        "galleryImages": [],
         "featured": false,
         "order": 2,
         "status": "published"
@@ -386,5 +383,5 @@
       }
     }
   },
-  "lastUpdated": "2026-10-18T05:36:06.049Z"
+  "lastUpdated": "2026-10-18T07:23:37.332Z"
 }
