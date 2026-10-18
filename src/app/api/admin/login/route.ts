@@ -22,12 +22,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const sessionToken = createAdminSession(identifier);
+    const ownerEmail = getAuthorizedOwnerEmail();
+    const sessionToken = createAdminSession(ownerEmail);
     const response = NextResponse.json({
       success: true,
       message: "Authentication successful",
       user: {
-        email: identifier.toLowerCase(),
+        email: ownerEmail,
         username: "Sail Gavhane",
         role: "owner",
       },
