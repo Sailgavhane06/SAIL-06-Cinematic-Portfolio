@@ -16,30 +16,48 @@ export default function Blog({
   onEditSection,
   onAddArticle,
 }: BlogProps) {
-  const defaultArticles = [
+  const defaultArticles: NonNullable<SiteData["blog"]>["articles"] = [
     {
+      id: "art-1",
       title: "Designing Robust Hardware: Lessons from 100+ PCB Iterations",
+      slug: "designing-robust-hardware",
       excerpt:
+        "Why signal integrity, thermal dissipation, and ground-loop management are often overlooked in early prototypes and how to prevent field failures.",
+      content:
         "Why signal integrity, thermal dissipation, and ground-loop management are often overlooked in early prototypes and how to prevent field failures.",
       category: "Hardware Engineering",
       readTime: "7 min read",
       date: "October 2026",
+      thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+      status: "published",
     },
     {
+      id: "art-2",
       title: "Bridging Silicon & Code: Building Embedded Systems That Don't Crash",
+      slug: "bridging-silicon-and-code",
       excerpt:
+        "Techniques for deterministic firmware design, state-machine resilience, and hardware-in-the-loop testing workflows for mission-critical electronics.",
+      content:
         "Techniques for deterministic firmware design, state-machine resilience, and hardware-in-the-loop testing workflows for mission-critical electronics.",
       category: "Firmware & Architecture",
       readTime: "5 min read",
       date: "September 2026",
+      thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
+      status: "published",
     },
     {
+      id: "art-3",
       title: "I Don't Just Learn Things. I Build Things — The Maker Mindset",
+      slug: "maker-mindset-build-things",
       excerpt:
+        "How rapid prototyping and an uncompromising builder philosophy accelerates engineering comprehension 10x faster than passive theory.",
+      content:
         "How rapid prototyping and an uncompromising builder philosophy accelerates engineering comprehension 10x faster than passive theory.",
       category: "Philosophy & Building",
       readTime: "4 min read",
       date: "August 2026",
+      thumbnail: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+      status: "published",
     },
   ];
 
@@ -108,6 +126,22 @@ export default function Blog({
               className="group rounded-2xl bg-[#131316] border border-white/[0.06] p-7 sm:p-8 flex flex-col justify-between hover:border-[#FF3028]/40 transition-all duration-300 hover:-translate-y-1"
             >
               <div>
+                {/* Thumbnail Image if provided */}
+                {art.thumbnail && (
+                  <div className="relative w-full aspect-[16/10] mb-5 rounded-xl overflow-hidden bg-black/40 border border-white/[0.08]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={art.thumbnail}
+                      alt={art.title}
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.currentTarget.parentElement as HTMLElement)?.classList.add("hidden");
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#131316] via-transparent to-transparent opacity-60 pointer-events-none" />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-xs text-zinc-400 mb-4 font-mono">
                   <span className="text-[#FF3028] font-semibold tracking-wider uppercase">
                     {art.category}

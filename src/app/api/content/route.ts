@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getPublicSiteData } from "@/lib/storage";
-export async function GET() {
+
+export async function GET(request: NextRequest) {
   try {
     const publicContent = await getPublicSiteData();
     return NextResponse.json(
@@ -10,7 +11,9 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       }
     );

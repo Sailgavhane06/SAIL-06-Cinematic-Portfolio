@@ -23,7 +23,7 @@ function LoginForm() {
   const nextUrl = searchParams.get("next") || "/admin";
 
   const [viewMode, setViewMode] = useState<"login" | "otp">("login");
-  const [email] = useState("sailgavhane06@gmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -256,7 +256,7 @@ function LoginForm() {
                   </button>
                   <div>
                     <h2 className="text-lg font-bold text-white tracking-tight">Reset Password with OTP</h2>
-                    <p className="text-xs text-zinc-400">Target: {email}</p>
+                    <p className="text-xs text-zinc-400">Target: {email || "Authorized Owner Account"}</p>
                   </div>
                 </div>
 
@@ -264,10 +264,10 @@ function LoginForm() {
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
                       <p className="text-zinc-400">
-                        Click below to generate and send a 6-digit OTP code to your Gmail address:
+                        Click below to generate and send a 6-digit OTP code to your registered owner Gmail address:
                       </p>
                       <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                        {email}
+                        {email || "Registered Owner Gmail"}
                       </div>
                     </div>
 
@@ -392,7 +392,7 @@ function LoginForm() {
                     )}
                   </button>
                   <div className="text-center text-[10px] text-zinc-500 font-mono">
-                    Direct access for verified account: <span className="text-zinc-300">{email}</span>
+                    Direct access for verified owner account
                   </div>
                 </div>
 
@@ -414,9 +414,11 @@ function LoginForm() {
                       </div>
                       <input
                         type="email"
-                        readOnly
+                        required
                         value={email}
-                        className="w-full bg-[#18181e]/70 border border-white/[0.08] text-zinc-300 rounded-xl pl-10 pr-4 py-3 text-sm font-mono cursor-not-allowed select-none"
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="owner@domain.com"
+                        className="w-full bg-[#18181e] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-3 text-sm font-mono outline-none"
                       />
                     </div>
                   </div>

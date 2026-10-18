@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -23,9 +23,15 @@ export default function Home() {
   const [isOwner, setIsOwner] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  // 1. Fetch verified published content from public API
-  useEffect(() => {
-    fetch("/api/content")
+  // 1. Fetch verified published content from public API with zero-caching
+  const fetchContent = useCallback(() => {
+    fetch("/api/content", {
+      cache: "no-store",
+      headers: {
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+      },
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Public content endpoint returned non-200");
         return res.json();
@@ -37,30 +43,33 @@ export default function Home() {
           const mappedSocialLinks = {
             instagram: remote.contact?.socialLinks?.instagram?.enabled
               ? remote.contact.socialLinks.instagram.url
-              : "",
+              : defaultSiteData.socialLinks.instagram,
             youtube: remote.contact?.socialLinks?.youtube?.enabled
               ? remote.contact.socialLinks.youtube.url
-              : "",
+              : defaultSiteData.socialLinks.youtube,
             facebook: remote.contact?.socialLinks?.facebook?.enabled
               ? remote.contact.socialLinks.facebook.url
-              : "",
+              : defaultSiteData.socialLinks.facebook,
             whatsapp: remote.contact?.socialLinks?.whatsapp?.enabled
               ? remote.contact.socialLinks.whatsapp.url
-              : "",
+              : defaultSiteData.socialLinks.whatsapp,
             x: remote.contact?.socialLinks?.x?.enabled
               ? remote.contact.socialLinks.x.url
-              : "",
+              : defaultSiteData.socialLinks.x,
           };
 
           setSiteData({
             hero: {
               ...defaultSiteData.hero,
               ...(remote.hero || {}),
+              portraitImage: remote.hero?.portraitImage || defaultSiteData.hero.portraitImage,
             },
             about: {
               ...defaultSiteData.about,
               ...(remote.about || {}),
+              profilePhoto: remote.about?.profilePhoto || defaultSiteData.about.profilePhoto,
               pillars: remote.about?.pillars?.length ? remote.about.pillars : defaultSiteData.about.pillars,
+              highlights: remote.about?.highlights?.length ? remote.about.highlights : defaultSiteData.about.highlights,
             },
             projects: remote.projects && remote.projects.length > 0 ? remote.projects : defaultSiteData.projects,
             blog: {
@@ -71,6 +80,7 @@ export default function Home() {
             travel: {
               ...defaultSiteData.travel,
               ...(remote.travel || {}),
+              stories: remote.travel?.stories?.length ? remote.travel.stories : defaultSiteData.travel.stories,
             },
             contact: {
               ...defaultSiteData.contact,
@@ -84,13 +94,27 @@ export default function Home() {
         }
       })
       .catch((err) => {
-        console.warn("Using baseline content:", err);
+        console.warn("Using baseline content fallback:", err);
       });
   }, []);
 
+  // Initial load
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
+
+  // Re-fetch on window focus (so returning from Admin tab immediately displays saved updates)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchContent();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [fetchContent]);
+
   // 2. Check if the viewer is authenticated as the owner
   useEffect(() => {
-    fetch("/api/admin/me")
+    fetch("/api/admin/me", { cache: "no-store" })
       .then((res) => {
         if (res.ok) return res.json();
         return null;
@@ -128,6 +152,36 @@ export default function Home() {
 
   const navigateToAdminTab = (tab: string) => {
     window.location.href = `/admin?tab=${tab}`;
+  };
+
+  const handleUpdateSocialLink = async (platform: keyof SiteData["socialLinks"], url: string) => {
+    try {
+      const updatedLinks = {
+        ...siteData.socialLinks,
+        [platform]: url,
+      };
+      setSiteData((prev) => ({ ...prev, socialLinks: updatedLinks }));
+
+      await fetch("/api/admin/content", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: "contact",
+          data: {
+            ...siteData.contact,
+            socialLinks: {
+              instagram: { url: platform === "instagram" ? url : siteData.socialLinks.instagram, enabled: true },
+              youtube: { url: platform === "youtube" ? url : siteData.socialLinks.youtube, enabled: true },
+              facebook: { url: platform === "facebook" ? url : siteData.socialLinks.facebook, enabled: true },
+              whatsapp: { url: platform === "whatsapp" ? url : siteData.socialLinks.whatsapp, enabled: true },
+              x: { url: platform === "x" ? url : siteData.socialLinks.x, enabled: true },
+            },
+          },
+        }),
+      });
+    } catch (e) {
+      console.error("Error saving social link:", e);
+    }
   };
 
   return (
@@ -200,7 +254,7 @@ export default function Home() {
       <SocialDock
         socialLinks={siteData.socialLinks || defaultSiteData.socialLinks}
         isOwner={isOwner}
-        onUpdateSocialLink={() => {}}
+        onUpdateSocialLink={handleUpdateSocialLink}
       />
 
       {/* Footer */}
@@ -227,9 +281,11 @@ export default function Home() {
         onClose={() => setIsProfileModalOpen(false)}
         onLoginSuccess={() => {
           setIsOwner(true);
+          fetchContent();
         }}
         onLogoutSuccess={() => {
           setIsOwner(false);
+          fetchContent();
         }}
       />
     </div>

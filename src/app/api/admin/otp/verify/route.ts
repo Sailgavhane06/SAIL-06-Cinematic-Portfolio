@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyOtpAndUpdatePassword, AUTHORIZED_OWNER_EMAIL } from "@/lib/auth";
+import { verifyOtpAndUpdatePassword, getAuthorizedOwnerEmail } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { email, otp, newPassword } = body;
+    const ownerEmail = getAuthorizedOwnerEmail();
 
     const requestedEmail = (email || "").trim().toLowerCase();
-    if (requestedEmail && requestedEmail !== AUTHORIZED_OWNER_EMAIL) {
+    if (requestedEmail && requestedEmail !== ownerEmail) {
       return NextResponse.json(
-        { error: `Access Denied: Only ${AUTHORIZED_OWNER_EMAIL} password can be updated.` },
+        { error: "Access Denied: Only the registered owner password can be updated." },
         { status: 403 }
       );
     }

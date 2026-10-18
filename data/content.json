@@ -12,7 +12,7 @@
     "experienceYears": "5+",
     "experienceLine1": "building projects, sharing learnings",
     "experienceLine2": "and creating impact.",
-    "portraitImage": "/sail-portrait.jpg"
+    "portraitImage": "/uploads/a66fc2f1-69fa-4f4a-b225-f3f5bfc73cf7.png"
   },
   "about": {
     "quotePart1": "I don't just learn things.",
@@ -44,7 +44,7 @@
     "highlights": [
       "5+ years of hands-on prototyping and product engineering",
       "Deep expertise in electronics, circuit design & embedded code",
-      "Creator of open-source tools, technical guides & hardware builds",
+      "Custom PCB layout & high-frequency RF telemetry",
       "Relentless focus on solving high-friction, real-world problems"
     ]
   },
@@ -104,6 +104,25 @@
     "ctaLink": "#contact"
   },
   "projects": [
+    {
+      "id": "proj-live-e2e",
+      "title": "Autonomous Drone Flight Controller",
+      "category": "Embedded Systems",
+      "desc": "Custom quadcopter flight firmware with dual redundant IMUs, real-time optical flow tracking, and sub-millisecond control loops.",
+      "detailedDesc": "Complete STM32F4-based flight computer designed from scratch.",
+      "tech": [
+        "STM32",
+        "C++",
+        "FreeRTOS",
+        "KiCAD"
+      ],
+      "highlight": "Field Verified",
+      "image": "/uploads/3b31548a-eaa3-4a0d-b3af-391eb473f2e8.png",
+      "imageAlt": "Autonomous Drone Flight Controller PCB",
+      "link": "https://github.com/Sailgavhane06/drone-controller",
+      "order": 1,
+      "status": "published"
+    },
     {
       "id": "project-1",
       "title": "Autonomous IoT Sensor Mesh",
@@ -186,6 +205,18 @@
     "heading": "Engineering Notes & Learnings",
     "description": "Deep dives into electronics design, product prototyping, and software engineering.",
     "articles": [
+      {
+        "id": "post-live-e2e",
+        "title": "Signal Integrity at 100MHz: Ground Loops Explained",
+        "slug": "signal-integrity-100mhz",
+        "excerpt": "Practical laboratory measurements explaining return path inductance and split ground planes in high-speed hardware.",
+        "content": "Deep dive into grounding and impedance matching...",
+        "category": "Electronics Engineering",
+        "readTime": "6 min read",
+        "date": "October 2026",
+        "thumbnail": "/uploads/3b31548a-eaa3-4a0d-b3af-391eb473f2e8.png",
+        "status": "published"
+      },
       {
         "id": "post-1",
         "title": "Designing Robust Hardware: Lessons from 100+ PCB Iterations",
@@ -354,5 +385,6 @@
         "enabled": true
       }
     }
-  }
+  },
+  "lastUpdated": "2026-10-18T05:36:06.049Z"
 }

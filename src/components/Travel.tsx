@@ -377,6 +377,11 @@ export default function Travel({
               key={currentJourney.id}
               src={currentJourney.coverImage}
               alt={currentJourney.altText || currentJourney.title}
+              onError={(e) => {
+                if (e.currentTarget.src !== defaultTravels[0].coverImage) {
+                  e.currentTarget.src = defaultTravels[0].coverImage;
+                }
+              }}
               className="w-full h-full object-cover object-center transform scale-100 group-hover:scale-105 transition-transform duration-1000 ease-out animate-in fade-in zoom-in-95 duration-700"
             />
 

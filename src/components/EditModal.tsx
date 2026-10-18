@@ -166,11 +166,15 @@ export default function EditModal({
       projects: [
         ...prev.projects,
         {
+          id: `proj-${Date.now()}`,
           title: "New Engineering Project",
           category: "Hardware & Software",
           desc: "Description of the new project, engineering challenges solved, and technical architecture.",
+          detailedDesc: "Description of the new project, engineering challenges solved, and technical architecture.",
           tech: ["Next.js", "TypeScript", "C++"],
           highlight: "Newly Built",
+          order: prev.projects.length + 1,
+          status: "published",
         },
       ],
     }));
@@ -197,11 +201,15 @@ export default function EditModal({
         articles: [
           ...prev.blog.articles,
           {
+            id: `art-${Date.now()}`,
             title: "New Technical Deep Dive",
+            slug: "new-technical-deep-dive",
             excerpt: "Key learnings, design decisions, and hardware/software implementation insights.",
+            content: "Key learnings, design decisions, and hardware/software implementation insights.",
             category: "Engineering & Tech",
             readTime: "5 min read",
             date: currentMonthYear,
+            status: "published",
           },
         ],
       },
@@ -228,6 +236,7 @@ export default function EditModal({
         pillars: [
           ...(prev.about.pillars || []),
           {
+            id: `pillar-${Date.now()}`,
             title: "New Core Discipline",
             desc: "Engineering methodology and hands-on execution solving critical technical bottlenecks.",
           },

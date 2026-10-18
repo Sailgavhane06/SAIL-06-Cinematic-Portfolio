@@ -66,9 +66,14 @@ export default function Hero({
         <div className="relative h-[82svh] sm:h-[86svh] md:h-[88svh] lg:h-[90svh] max-h-[820px] w-auto flex items-end justify-center translate-x-[4%] sm:translate-x-[3%] lg:translate-x-[4%] xl:translate-x-[5%]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={(heroData as unknown as { portraitImage?: string })?.portraitImage || "/sail-portrait.jpg"}
+            src={heroData.portraitImage || "/sail-portrait.jpg"}
             alt="Sail Gavhane — Creator & Electrical Engineer"
             className="h-full w-auto max-w-none object-contain object-bottom filter contrast-[1.02]"
+            onError={(e) => {
+              if (e.currentTarget.src !== window.location.origin + "/sail-portrait.jpg" && e.currentTarget.src !== "/sail-portrait.jpg") {
+                e.currentTarget.src = "/sail-portrait.jpg";
+              }
+            }}
           />
 
           {/* Smooth horizontal gradient fades on photo edges to blend with #0e0e10 background */}

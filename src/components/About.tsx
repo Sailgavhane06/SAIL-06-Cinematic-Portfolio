@@ -20,12 +20,15 @@ export default function About({
 }: AboutProps) {
   const icons = [Zap, Code, Cpu, Rocket];
 
-  const highlights = [
-    "5+ years of hands-on prototyping and product engineering",
-    "Deep expertise in electronics, circuit design & embedded code",
-    "Creator of open-source tools, technical guides & hardware builds",
-    "Relentless focus on solving high-friction, real-world problems",
-  ];
+  const highlights =
+    aboutData.highlights && aboutData.highlights.length > 0
+      ? aboutData.highlights
+      : [
+          "5+ years of hands-on prototyping and product engineering",
+          "Deep expertise in electronics, circuit design & embedded code",
+          "Creator of open-source tools, technical guides & hardware builds",
+          "Relentless focus on solving high-friction, real-world problems",
+        ];
 
   const editableClass = inlineEditMode
     ? "outline-dashed outline-1 outline-[#FF3028]/60 hover:outline-[#FF3028] hover:bg-white/[0.04] rounded px-1 cursor-text transition-all"
@@ -38,29 +41,45 @@ export default function About({
     >
       <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16">
         {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 sm:mb-20 gap-6">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-[2px] bg-[#FF3028]" />
-              <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
-                ABOUT ME
-              </span>
-            </div>
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-16 sm:mb-20 gap-8">
+          <div className="flex flex-col sm:flex-row items-start gap-8 max-w-3xl">
+            {aboutData.profilePhoto && (
+              <div className="relative w-28 h-28 sm:w-36 sm:h-36 shrink-0 rounded-2xl overflow-hidden border border-white/[0.1] bg-[#141418] shadow-2xl group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={aboutData.profilePhoto}
+                  alt="Profile"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.currentTarget.parentElement as HTMLElement)?.classList.add("hidden");
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-[2px] bg-[#FF3028]" />
+                <span className="text-[12px] font-semibold tracking-[0.25em] text-[#FF3028] uppercase">
+                  ABOUT ME
+                </span>
+              </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-              &ldquo;
-              <span className={editableClass}>{aboutData.quotePart1}</span>{" "}
-              <br />
-              <span className={`text-[#FF3028] ${editableClass}`}>
-                {aboutData.quoteHighlight}
-              </span>
-              &rdquo;
-            </h2>
-            <p
-              className={`mt-6 text-base sm:text-lg text-[#C5C5C5] leading-relaxed max-w-2xl font-light ${editableClass}`}
-            >
-              {aboutData.bio}
-            </p>
+              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                &ldquo;
+                <span className={editableClass}>{aboutData.quotePart1}</span>{" "}
+                <br />
+                <span className={`text-[#FF3028] ${editableClass}`}>
+                  {aboutData.quoteHighlight}
+                </span>
+                &rdquo;
+              </h2>
+              <p
+                className={`mt-6 text-base sm:text-lg text-[#C5C5C5] leading-relaxed max-w-2xl font-light ${editableClass}`}
+              >
+                {aboutData.bio}
+              </p>
+            </div>
           </div>
 
           {/* Owner-Only Action Buttons */}

@@ -487,6 +487,23 @@ export async function saveAdminSection<K extends keyof SiteContent>(
 }
 
 /**
+ * Save multiple sections atomically to prevent race conditions
+ */
+export async function saveAdminMultipleSections(
+  updates: Partial<SiteContent>
+): Promise<SiteContent> {
+  const current = await getAdminSiteData();
+  const updated: SiteContent = {
+    ...current,
+    ...updates,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  await atomicWriteJson(CONTENT_FILE_PATH, updated);
+  return updated;
+}
+
+/**
  * Save complete content update from admin
  */
 export async function saveFullAdminContent(content: SiteContent): Promise<SiteContent> {

@@ -101,6 +101,30 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Save multiple sections atomically (e.g. Hero and About together)
+  const handleSaveMultipleSections = async (updates: Partial<SiteContent>): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/admin/content", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates }),
+      });
+
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Save operation rejected by server");
+      }
+
+      setContent(result.data);
+      showNotice("success", `Changes saved to database and live.`);
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to persist changes";
+      showNotice("error", msg);
+      return false;
+    }
+  };
+
   const showNotice = (type: "success" | "error", text: string) => {
     setGlobalNotice({ type, text });
     setTimeout(() => setGlobalNotice(null), 4000);
@@ -281,11 +305,7 @@ export default function AdminDashboardPage() {
           <SectionHeroAbout
             initialHero={content.hero}
             initialAbout={content.about}
-            onSave={async (hero, about) => {
-              const resHero = await handleSaveSection("hero", hero);
-              const resAbout = await handleSaveSection("about", about);
-              return resHero && resAbout;
-            }}
+            onSave={(hero, about) => handleSaveMultipleSections({ hero, about })}
           />
         )}
 

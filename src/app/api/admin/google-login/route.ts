@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyGoogleLogin, createAdminSession, COOKIE_NAME, AUTHORIZED_OWNER_EMAIL } from "@/lib/auth";
+import { verifyGoogleLogin, createAdminSession, COOKIE_NAME, getAuthorizedOwnerEmail } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { email, credential } = body;
+    const emailToVerify = email || getAuthorizedOwnerEmail();
 
-    const result = await verifyGoogleLogin(email, credential);
+    const result = await verifyGoogleLogin(emailToVerify, credential);
 
     if (!result.success || !result.email) {
       return NextResponse.json(
-        { error: result.error || `Access Denied: Only ${AUTHORIZED_OWNER_EMAIL} is authorized.` },
+        { error: result.error || "Access Denied: Only the authorized owner account can sign in." },
         { status: 403 }
       );
     }

@@ -81,6 +81,22 @@ export default function Projects({
               className="group relative rounded-2xl bg-[#121215] border border-white/[0.07] p-8 sm:p-10 flex flex-col justify-between hover:border-[#FF3028]/50 transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.4)] hover:-translate-y-1"
             >
               <div>
+                {/* Project Image Showcase if provided */}
+                {proj.image && (
+                  <div className="relative w-full aspect-[16/9] mb-6 rounded-xl overflow-hidden bg-black/40 border border-white/[0.08]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={proj.image}
+                      alt={proj.title}
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.currentTarget.parentElement as HTMLElement)?.classList.add("hidden");
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#121215] via-transparent to-transparent opacity-60 pointer-events-none" />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-5">
                   <span
                     className={`text-xs font-semibold tracking-wider uppercase text-[#FF3028] px-3 py-1 rounded-full bg-[#FF3028]/10 border border-[#FF3028]/20 ${editableClass}`}
@@ -93,12 +109,24 @@ export default function Projects({
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-3 tracking-tight group-hover:text-white transition-colors flex items-center justify-between">
-                  <span className={editableClass}>{proj.title}</span>
+                  {proj.link ? (
+                    <a
+                      href={proj.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`hover:text-[#FF3028] transition-colors ${editableClass}`}
+                    >
+                      {proj.title}
+                    </a>
+                  ) : (
+                    <span className={editableClass}>{proj.title}</span>
+                  )}
                   <div className="flex items-center gap-1.5">
                     {isOwner && onEditSection && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           onEditSection();
                         }}
                         className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-[#FF3028] text-zinc-400 hover:text-white transition-colors cursor-pointer"
@@ -107,7 +135,19 @@ export default function Projects({
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    <ArrowUpRight className="w-5 h-5 text-zinc-500 group-hover:text-[#FF3028] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+                    {proj.link ? (
+                      <a
+                        href={proj.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-zinc-500 hover:text-[#FF3028] transition-colors"
+                        title={`View ${proj.title}`}
+                      >
+                        <ArrowUpRight className="w-5 h-5 group-hover:text-[#FF3028] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+                      </a>
+                    ) : (
+                      <ArrowUpRight className="w-5 h-5 text-zinc-500 group-hover:text-[#FF3028] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
+                    )}
                   </div>
                 </h3>
 

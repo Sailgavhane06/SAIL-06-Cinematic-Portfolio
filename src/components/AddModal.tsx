@@ -75,28 +75,37 @@ export default function AddModal({
         .map((t) => t.trim())
         .filter(Boolean);
       onAddProject({
+        id: `proj-${Date.now()}`,
         title: projectTitle.trim(),
         category: projectCategory.trim() || "Hardware & Software",
         desc: projectDesc.trim() || "Project engineered to solve real-world problems.",
         tech: techArray.length ? techArray : ["Custom Hardware", "Embedded"],
         highlight: projectHighlight.trim() || "Production Ready",
+        order: Date.now(),
+        status: "published",
       });
       setProjectTitle("");
       setProjectDesc("");
     } else if (category === "article") {
       if (!articleTitle.trim()) return;
+      const cleanTitle = articleTitle.trim();
       onAddArticle({
-        title: articleTitle.trim(),
+        id: `art-${Date.now()}`,
+        title: cleanTitle,
+        slug: cleanTitle.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-"),
         excerpt: articleExcerpt.trim() || "Deep-dive technical learnings and engineering observations.",
+        content: articleExcerpt.trim() || "Deep-dive technical learnings and engineering observations.",
         category: articleCategory.trim() || "Engineering Insights",
         readTime: articleReadTime.trim() || "5 min read",
         date: articleDate.trim() || "October 2026",
+        status: "published",
       });
       setArticleTitle("");
       setArticleExcerpt("");
     } else if (category === "pillar") {
       if (!pillarTitle.trim()) return;
       onAddPillar({
+        id: `pillar-${Date.now()}`,
         title: pillarTitle.trim(),
         desc: pillarDesc.trim() || "Engineering discipline focused on real-world execution.",
       });

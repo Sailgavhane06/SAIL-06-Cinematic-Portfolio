@@ -34,7 +34,7 @@ export default function ProfileAuthModal({
   onLogoutSuccess,
 }: ProfileAuthModalProps) {
   const [viewMode, setViewMode] = useState<"login" | "otp">("login");
-  const [email] = useState("sailgavhane06@gmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -267,7 +267,7 @@ export default function ProfileAuthModal({
                 Owner Mode Active
               </div>
               <h2 className="text-2xl font-black text-white tracking-tight">Sail Gavhane</h2>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">{email} • Full Editing Access</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">{email || "Owner Account"} • Full Editing Access</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-left text-xs text-zinc-300 space-y-2">
@@ -281,7 +281,7 @@ export default function ProfileAuthModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">Authorized Account:</span>
-                <span className="text-white font-mono truncate max-w-[200px]">{email}</span>
+                <span className="text-white font-mono truncate max-w-[200px]">{email || "Verified Owner"}</span>
               </div>
             </div>
 
@@ -325,7 +325,7 @@ export default function ProfileAuthModal({
               </button>
               <div>
                 <h2 className="text-xl font-black text-white tracking-tight">Password Reset OTP</h2>
-                <p className="text-xs text-zinc-400">Sent exclusively to {email}</p>
+                <p className="text-xs text-zinc-400">Target: {email || "Registered Owner Account"}</p>
               </div>
             </div>
 
@@ -350,7 +350,7 @@ export default function ProfileAuthModal({
                     Click the button below to generate a secure 6-digit OTP code to your registered Gmail account:
                   </p>
                   <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                    {email}
+                    {email || "Registered Owner Gmail"}
                   </div>
                 </div>
 
@@ -537,7 +537,7 @@ export default function ProfileAuthModal({
                 )}
               </button>
               <div className="text-center text-[10px] text-zinc-500 font-mono">
-                Direct login for registered owner: <span className="text-zinc-300">{email}</span>
+                Direct login for verified owner account
               </div>
             </div>
 
@@ -551,13 +551,13 @@ export default function ProfileAuthModal({
 
             {/* PASSWORD FORM */}
             <form onSubmit={handleSubmitPassword} className="space-y-4">
-              {/* Email (Locked to owner account) */}
+              {/* Email Input */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400">
                     Owner Email
                   </label>
-                  <span className="text-[10px] text-emerald-400 font-mono">Verified Owner</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">Owner Account</span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
@@ -567,9 +567,11 @@ export default function ProfileAuthModal({
                     id="owner-auth-email"
                     name="email"
                     type="email"
-                    readOnly
+                    required
                     value={email}
-                    className="w-full bg-[#181820]/70 border border-white/[0.08] text-zinc-300 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono cursor-not-allowed select-none"
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter owner email"
+                    className="w-full bg-[#181820] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono"
                   />
                 </div>
               </div>
@@ -640,7 +642,7 @@ export default function ProfileAuthModal({
 
             <div className="mt-5 text-center">
               <p className="text-[11px] text-zinc-500 font-mono">
-                Authorized Owner Access Only • {email}
+                Authorized Owner Access Only
               </p>
             </div>
           </div>

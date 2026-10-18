@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { verifyAdminApiRequest } from "@/lib/auth";
-import { getAdminSiteData, saveAdminSection, saveFullAdminContent } from "@/lib/storage";
+import {
+  getAdminSiteData,
+  saveAdminSection,
+  saveAdminMultipleSections,
+  saveFullAdminContent,
+} from "@/lib/storage";
 import { SiteContent } from "@/lib/types";
 
 // Helper to validate and sanitize URLs
@@ -17,6 +23,16 @@ function isSafeUrl(url: string): boolean {
   return true;
 }
 
+function invalidatePublicCaches() {
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/travel", "page");
+    revalidatePath("/api/content");
+  } catch (err) {
+    console.warn("Cache revalidation warning:", err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const session = verifyAdminApiRequest(req);
   if (!session) {
@@ -25,7 +41,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await getAdminSiteData();
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json(
+      { success: true, data },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching admin content:", error);
     return NextResponse.json(
@@ -44,7 +67,18 @@ export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Support updating a specific section or the complete content object
+    // 1. Support updating multiple sections atomically (e.g. hero and about together)
+    if (body.updates && typeof body.updates === "object") {
+      const updated = await saveAdminMultipleSections(body.updates);
+      invalidatePublicCaches();
+      return NextResponse.json({
+        success: true,
+        message: "Sections updated successfully",
+        data: updated,
+      });
+    }
+
+    // 2. Support updating a specific section
     if (body.section && body.data) {
       const sectionName = body.section as keyof SiteContent;
       const validSections: (keyof SiteContent)[] = [
@@ -79,6 +113,7 @@ export async function PUT(req: NextRequest) {
       }
 
       const updated = await saveAdminSection(sectionName, body.data);
+      invalidatePublicCaches();
       return NextResponse.json({
         success: true,
         message: `Section ${String(sectionName)} updated successfully`,
@@ -86,8 +121,10 @@ export async function PUT(req: NextRequest) {
       });
     }
 
+    // 3. Support saving complete portfolio content
     if (body.content) {
       const updated = await saveFullAdminContent(body.content);
+      invalidatePublicCaches();
       return NextResponse.json({
         success: true,
         message: "Full portfolio content updated successfully",
@@ -96,7 +133,7 @@ export async function PUT(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Payload must contain either 'section' and 'data', or 'content'" },
+      { error: "Payload must contain either 'section' and 'data', 'updates', or 'content'" },
       { status: 400 }
     );
   } catch (error) {

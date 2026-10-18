@@ -135,7 +135,13 @@ export default function TravelPage() {
 
   // Fetch verified published content from public API
   useEffect(() => {
-    fetch("/api/content")
+    fetch("/api/content", {
+      cache: "no-store",
+      headers: {
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
+      },
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (json && json.success && json.data?.travel?.stories?.length) {
@@ -277,6 +283,11 @@ export default function TravelPage() {
               <img
                 src={featuredStory.coverImage}
                 alt={featuredStory.altText || featuredStory.title}
+                onError={(e) => {
+                  if (e.currentTarget.src !== baselineTravels[0].coverImage) {
+                    e.currentTarget.src = baselineTravels[0].coverImage;
+                  }
+                }}
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#070709] via-black/40 to-black/30 pointer-events-none" />
@@ -371,6 +382,11 @@ export default function TravelPage() {
                   <img
                     src={story.coverImage}
                     alt={story.altText || story.title}
+                    onError={(e) => {
+                      if (e.currentTarget.src !== baselineTravels[0].coverImage) {
+                        e.currentTarget.src = baselineTravels[0].coverImage;
+                      }
+                    }}
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#111116] via-transparent to-black/30 pointer-events-none" />
@@ -437,6 +453,11 @@ export default function TravelPage() {
                 <img
                   src={selectedStory.coverImage}
                   alt={selectedStory.altText || selectedStory.title}
+                  onError={(e) => {
+                    if (e.currentTarget.src !== baselineTravels[0].coverImage) {
+                      e.currentTarget.src = baselineTravels[0].coverImage;
+                    }
+                  }}
                   className="w-full h-full object-cover object-center"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111116] via-transparent to-black/30 pointer-events-none" />
