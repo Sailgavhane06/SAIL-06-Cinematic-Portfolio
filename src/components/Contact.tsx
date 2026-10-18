@@ -18,11 +18,62 @@ export default function Contact({
   onEditSection,
 }: ContactProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 5000);
+    setIsSending(true);
+    setSendError(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    formData.append("access_key", "581b035c-1e1f-4d00-92ca-42994f78650a");
+
+    try {
+      let isSuccess = false;
+
+      // 1. Direct Web3Forms submission
+      try {
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          isSuccess = true;
+        }
+      } catch {
+        // Fallback to internal route if direct fetch fails (e.g. adblockers or localhost CORS)
+      }
+
+      // 2. Reliable internal route fallback
+      if (!isSuccess) {
+        const fallbackRes = await fetch("/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.get("name"),
+            email: formData.get("email"),
+            message: formData.get("message"),
+          }),
+        });
+        const fallbackData = await fallbackRes.json();
+        if (fallbackRes.ok && fallbackData.success) {
+          isSuccess = true;
+        } else {
+          throw new Error(fallbackData.error || "Submission failed");
+        }
+      }
+
+      setSubmitted(true);
+      form.reset();
+      setTimeout(() => setSubmitted(false), 8000);
+    } catch {
+      setSendError("Something went wrong. Please try again or reach out directly via email.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const editableClass = inlineEditMode
@@ -124,6 +175,7 @@ export default function Contact({
                   </label>
                   <input
                     type="text"
+                    name="name"
                     required
                     placeholder="e.g. Alex Morgan"
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-[#FF3028] transition-colors"
@@ -136,6 +188,7 @@ export default function Contact({
                   </label>
                   <input
                     type="email"
+                    name="email"
                     required
                     placeholder="alex@example.com"
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-[#FF3028] transition-colors"
@@ -148,18 +201,26 @@ export default function Contact({
                   </label>
                   <textarea
                     rows={4}
+                    name="message"
                     required
                     placeholder="Tell me about your idea, engineering requirements, or timeline..."
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-[#FF3028] transition-colors resize-none"
                   />
                 </div>
 
+                {sendError && (
+                  <p className="text-xs text-[#FF3028] bg-[#FF3028]/10 border border-[#FF3028]/30 rounded-lg p-2.5">
+                    {sendError}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#FF3028] text-white font-semibold text-sm hover:bg-[#ff453e] active:scale-[0.99] transition-all duration-200 shadow-[0_0_20px_rgba(255,48,40,0.3)]"
+                  disabled={isSending}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#FF3028] text-white font-semibold text-sm hover:bg-[#ff453e] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(255,48,40,0.3)] cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Send Message</span>
+                  <span>{isSending ? "Sending..." : "Send Message"}</span>
                 </button>
               </form>
             )}
