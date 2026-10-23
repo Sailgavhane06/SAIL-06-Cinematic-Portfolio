@@ -118,6 +118,13 @@ export interface TravelStory {
   updatedAt?: string;
 }
 
+export interface TravelFollower {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
 export interface TravelContent {
   headingPart1: string;
   headingHighlight: string;
@@ -125,6 +132,7 @@ export interface TravelContent {
   followTitle: string;
   followSubtitle: string;
   stories: TravelStory[];
+  followers?: TravelFollower[];
 }
 
 export interface SocialLinkConfig {

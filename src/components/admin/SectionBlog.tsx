@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { BlogContent, BlogPost } from "@/lib/types";
+import { BlogContent, BlogPost, PublicationStatus } from "@/lib/types";
 import ImageUploader from "./ImageUploader";
 import {
   Plus,
@@ -31,6 +31,13 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Sync if parent updates
+  React.useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   // Auto generate slug from title
   const generateSlug = (title: string) => {
     return title
@@ -52,13 +59,13 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
       readTime: "5 min read",
       date: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date()),
       thumbnail: "",
-      status: "draft",
+      status: "published",
     };
     setEditingPost(newPost);
     setIsCreating(true);
   };
 
-  const handleSavePostModal = (e: React.FormEvent) => {
+  const handleSavePostModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPost) return;
 
@@ -72,41 +79,67 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
       slug: editingPost.slug.trim() || generateSlug(editingPost.title),
     };
 
+    let nextArticles: BlogPost[];
     if (isCreating) {
-      setData((prev) => ({
-        ...prev,
-        articles: [finalPost, ...prev.articles],
-      }));
+      nextArticles = [finalPost, ...data.articles];
     } else {
-      setData((prev) => ({
-        ...prev,
-        articles: prev.articles.map((a) => (a.id === finalPost.id ? finalPost : a)),
-      }));
+      nextArticles = data.articles.map((a) => (a.id === finalPost.id ? finalPost : a));
     }
 
+    const nextData = {
+      ...data,
+      articles: nextArticles,
+    };
+
+    setData(nextData);
     setEditingPost(null);
     setIsCreating(false);
+
+    // Persist immediately to database and live website
+    setSaving(true);
+    const success = await onSave(nextData);
+    setSaving(false);
+    if (success) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    }
   };
 
-  const handleDeletePost = (id: string) => {
+  const handleDeletePost = async (id: string) => {
     if (!window.confirm("Are you sure you want to permanently delete this blog post?")) {
       return;
     }
-    setData((prev) => ({
-      ...prev,
-      articles: prev.articles.filter((a) => a.id !== id),
-    }));
+    const nextData = {
+      ...data,
+      articles: data.articles.filter((a) => a.id !== id),
+    };
+    setData(nextData);
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      articles: prev.articles.map((a) =>
+  const handleToggleStatus = async (id: string) => {
+    const nextData = {
+      ...data,
+      articles: data.articles.map((a) =>
         a.id === id
-          ? { ...a, status: a.status === "published" ? "draft" : "published" }
+          ? { ...a, status: (a.status === "published" ? "draft" : "published") as PublicationStatus }
           : a
       ),
-    }));
+    };
+    setData(nextData);
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -292,6 +325,28 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
         )}
       </div>
 
+      {/* Bottom Save & Add Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-white/[0.08]">
+        <button
+          type="button"
+          onClick={handleStartCreate}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#202028] hover:bg-[#282834] border border-white/[0.1] text-xs font-semibold text-white transition-all cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#FF3028]" />
+          <span>Write Another Article</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSubmit()}
+          disabled={saving}
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saving ? "Saving to Database..." : "Save All Articles"}</span>
+        </button>
+      </div>
+
       {/* Edit / Create Post Modal */}
       {editingPost && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -442,9 +497,11 @@ export default function SectionBlog({ initialData, onSave }: SectionBlogProps) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-md cursor-pointer active:scale-95"
                 >
-                  Apply to List
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>{saving ? "Saving to Database..." : "Save Article & Persist"}</span>
                 </button>
               </div>
             </form>

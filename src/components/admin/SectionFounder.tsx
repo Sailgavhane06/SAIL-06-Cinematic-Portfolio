@@ -17,6 +17,12 @@ export default function SectionFounder({
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  React.useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
   const handleAddMilestone = () => {
     const newM: FounderMilestone = {
       id: `milestone-${Date.now()}`,
@@ -210,6 +216,26 @@ export default function SectionFounder({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Bottom Save Bar */}
+      <div className="flex items-center justify-between pt-6 border-t border-white/[0.08]">
+        {saveSuccess ? (
+          <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium animate-in fade-in">
+            <Check className="w-4 h-4" />
+            <span>Saved to database and live</span>
+          </span>
+        ) : (
+          <span className="text-xs text-zinc-500 font-mono">Founder & Ventures Section</span>
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saving ? "Saving to Database..." : "Save Founder Content"}</span>
+        </button>
       </div>
     </form>
   );

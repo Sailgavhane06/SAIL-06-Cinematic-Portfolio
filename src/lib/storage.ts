@@ -1,9 +1,17 @@
 import fs from "fs";
 import path from "path";
-import { SiteContent, BlogPost, ProjectItem, TravelStory } from "./types";
+import os from "os";
+import { SiteContent, BlogPost, ProjectItem, TravelStory, TravelFollower } from "./types";
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __sail06_site_content: SiteContent | undefined;
+}
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONTENT_FILE_PATH = path.join(DATA_DIR, "content.json");
+const TMP_DATA_DIR = path.join(os.tmpdir(), "sail06-data");
+const TMP_CONTENT_FILE = path.join(TMP_DATA_DIR, "content.json");
 
 export const initialSiteContent: SiteContent = {
   hero: {
@@ -299,6 +307,26 @@ export const initialSiteContent: SiteContent = {
         status: "published",
       },
     ],
+    followers: [
+      {
+        id: "follower-1",
+        name: "Aarav Sharma",
+        email: "aarav.sharma@example.com",
+        createdAt: "2026-09-15T10:30:00.000Z",
+      },
+      {
+        id: "follower-2",
+        name: "Elena Rostova",
+        email: "elena.rostova@example.com",
+        createdAt: "2026-10-02T14:15:00.000Z",
+      },
+      {
+        id: "follower-3",
+        name: "Marcus Vance",
+        email: "marcus.vance@example.com",
+        createdAt: "2026-10-10T09:20:00.000Z",
+      },
+    ],
   },
   contact: {
     headingPart1: "Let's Build Something",
@@ -332,37 +360,93 @@ export const initialSiteContent: SiteContent = {
 };
 
 /**
- * Ensure data directory exists
+ * Helper to safely ensure a directory exists without throwing
  */
-function ensureDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+function ensureDir(dirPath: string): boolean {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    return true;
+  } catch {
+    return false;
   }
 }
 
 /**
- * Atomic file write helper to prevent data corruption
+ * Atomic file write helper with multi-tier storage fallback (Memory -> Tmp -> Project Disk).
+ * Survives read-only serverless file systems (Netlify / Vercel Lambda EROFS).
  */
 async function atomicWriteJson(filePath: string, data: unknown): Promise<void> {
-  ensureDataDir();
-  const tmpPath = `${filePath}.${Date.now()}.tmp`;
-  await fs.promises.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-  await fs.promises.rename(tmpPath, filePath);
+  const jsonStr = JSON.stringify(data, null, 2);
+
+  // Tier 1: In-Memory cache (instant, zero I/O latency, survives warm lambda instances)
+  globalThis.__sail06_site_content = data as SiteContent;
+
+  // Tier 2: Writable /tmp directory (guaranteed writable on Netlify, AWS Lambda, Vercel)
+  try {
+    ensureDir(TMP_DATA_DIR);
+    const tmpWrite = `${TMP_CONTENT_FILE}.${Date.now()}.tmp`;
+    await fs.promises.writeFile(tmpWrite, jsonStr, "utf-8");
+    await fs.promises.rename(tmpWrite, TMP_CONTENT_FILE);
+  } catch (err) {
+    console.warn("Notice: Tmp directory write skipped:", err);
+  }
+
+  // Tier 3: Local project disk (local development & persistent servers)
+  try {
+    const parentDir = path.dirname(filePath);
+    if (ensureDir(parentDir)) {
+      const targetTmp = `${filePath}.${Date.now()}.tmp`;
+      await fs.promises.writeFile(targetTmp, jsonStr, "utf-8");
+      await fs.promises.rename(targetTmp, filePath);
+    }
+  } catch (err) {
+    // Expected on read-only serverless file systems like Netlify Lambda (EROFS)
+    // Silently continue since memory & tmp tiers have succeeded.
+    console.warn("Notice: Local storage write skipped (read-only file system):", err);
+  }
 }
 
 /**
  * Get complete site content for admin editing (includes drafts)
  */
 export async function getAdminSiteData(): Promise<SiteContent> {
-  try {
-    ensureDataDir();
-    if (!fs.existsSync(CONTENT_FILE_PATH)) {
-      await atomicWriteJson(CONTENT_FILE_PATH, initialSiteContent);
-      return initialSiteContent;
-    }
+  // Tier 1: Return from memory if already active
+  if (globalThis.__sail06_site_content) {
+    return globalThis.__sail06_site_content;
+  }
 
-    const raw = await fs.promises.readFile(CONTENT_FILE_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<SiteContent>;
+  let rawJson: string | null = null;
+
+  // Tier 2: Read from writable /tmp directory if available
+  try {
+    if (fs.existsSync(TMP_CONTENT_FILE)) {
+      rawJson = await fs.promises.readFile(TMP_CONTENT_FILE, "utf-8");
+    }
+  } catch (e) {
+    console.warn("Notice: Could not read from tmp storage:", e);
+  }
+
+  // Tier 3: Read from project data directory
+  if (!rawJson) {
+    try {
+      if (fs.existsSync(CONTENT_FILE_PATH)) {
+        rawJson = await fs.promises.readFile(CONTENT_FILE_PATH, "utf-8");
+      }
+    } catch (e) {
+      console.warn("Notice: Could not read from project storage:", e);
+    }
+  }
+
+  if (!rawJson) {
+    // Initialize default content
+    await atomicWriteJson(CONTENT_FILE_PATH, initialSiteContent);
+    return initialSiteContent;
+  }
+
+  try {
+    const parsed = JSON.parse(rawJson) as Partial<SiteContent>;
 
     // Deep merge with initial content to guarantee structure integrity
     const merged: SiteContent = {
@@ -413,6 +497,14 @@ export async function getAdminSiteData(): Promise<SiteContent> {
           featured: typeof s.featured === "boolean" ? s.featured : (idx === 0),
           slug: s.slug || (s.title ? s.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") : s.id),
         })),
+        followers: Array.isArray(parsed.travel?.followers)
+          ? parsed.travel.followers.map((f: TravelFollower) => ({
+              id: f.id || `follower-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              name: f.name || "Explorer",
+              email: f.email || "",
+              createdAt: f.createdAt || new Date().toISOString(),
+            }))
+          : initialSiteContent.travel.followers || [],
       },
       contact: {
         ...initialSiteContent.contact,
@@ -425,6 +517,7 @@ export async function getAdminSiteData(): Promise<SiteContent> {
       lastUpdated: parsed.lastUpdated || new Date().toISOString(),
     };
 
+    globalThis.__sail06_site_content = merged;
     return merged;
   } catch (error) {
     console.error("Error reading site data from disk, returning defaults:", error);
@@ -436,6 +529,7 @@ export async function getAdminSiteData(): Promise<SiteContent> {
  * Get sanitized site content for public display.
  * Strictly filters out ANY draft items (projects, blog posts, travel stories).
  * Public visitors will NEVER receive draft content.
+ * Follower emails are completely stripped out to protect privacy.
  */
 export async function getPublicSiteData(): Promise<SiteContent> {
   const adminData = await getAdminSiteData();
@@ -454,6 +548,14 @@ export async function getPublicSiteData(): Promise<SiteContent> {
     .filter((s: TravelStory) => s.status === "published")
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
+  // Sanitize followers: public only sees names and dates, NEVER emails
+  const publicFollowers = (adminData.travel?.followers || []).map((f: TravelFollower) => ({
+    id: f.id,
+    name: f.name,
+    createdAt: f.createdAt,
+    email: "", // Privacy guarantee: Email never transmitted to public visitors
+  }));
+
   return {
     ...adminData,
     projects: publishedProjects,
@@ -464,6 +566,7 @@ export async function getPublicSiteData(): Promise<SiteContent> {
     travel: {
       ...adminData.travel,
       stories: publishedTravelStories,
+      followers: publicFollowers,
     },
   };
 }

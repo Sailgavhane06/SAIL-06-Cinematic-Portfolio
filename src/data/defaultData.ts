@@ -6,6 +6,7 @@ import {
   BlogContent,
   BlogPost,
   TravelStory,
+  TravelFollower,
 } from "@/lib/types";
 
 export interface SiteData {
@@ -24,6 +25,7 @@ export interface SiteData {
     followTitle: string;
     followSubtitle: string;
     stories?: TravelStory[];
+    followers?: TravelFollower[];
   };
   contact: {
     headingPart1: string;

@@ -46,7 +46,8 @@
       "Deep expertise in electronics, circuit design & embedded code",
       "Custom PCB layout & high-frequency RF telemetry",
       "Relentless focus on solving high-friction, real-world problems"
-    ]
+    ],
+    "heroGreeting": "SAIL GAVHANE - VERIFIED SAVE"
   },
   "engineering": {
     "heading": "Systems, Hardware & Embedded Architecture",
@@ -354,6 +355,32 @@
         "order": 4,
         "status": "published"
       }
+    ],
+    "followers": [
+      {
+        "id": "follower-1792686780291-yl1h",
+        "name": "Rohan Varma",
+        "email": "rohan.varma@example.com",
+        "createdAt": "2026-10-22T16:33:00.291Z"
+      },
+      {
+        "id": "follower-1",
+        "name": "Aarav Sharma",
+        "email": "aarav.sharma@example.com",
+        "createdAt": "2026-09-15T10:30:00.000Z"
+      },
+      {
+        "id": "follower-2",
+        "name": "Elena Rostova",
+        "email": "elena.rostova@example.com",
+        "createdAt": "2026-10-02T14:15:00.000Z"
+      },
+      {
+        "id": "follower-3",
+        "name": "Marcus Vance",
+        "email": "marcus.vance@example.com",
+        "createdAt": "2026-10-10T09:20:00.000Z"
+      }
     ]
   },
   "contact": {
@@ -385,5 +412,5 @@
       }
     }
   },
-  "lastUpdated": "2026-10-18T09:04:35.918Z"
+  "lastUpdated": "2026-10-22T16:40:01.580Z"
 }

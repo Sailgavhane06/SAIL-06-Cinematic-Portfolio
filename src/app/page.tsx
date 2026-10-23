@@ -103,13 +103,22 @@ export default function Home() {
     fetchContent();
   }, [fetchContent]);
 
-  // Re-fetch on window focus (so returning from Admin tab immediately displays saved updates)
+  // Re-fetch on window focus and visibility change (so returning from Admin tab immediately displays saved updates)
   useEffect(() => {
     const handleFocus = () => {
       fetchContent();
     };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchContent();
+      }
+    };
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchContent]);
 
   // 2. Check if the viewer is authenticated as the owner

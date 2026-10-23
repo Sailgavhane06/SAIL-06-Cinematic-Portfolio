@@ -54,27 +54,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure uploads directory exists
-    if (!fs.existsSync(UPLOADS_DIR)) {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    let publicUrl = "";
+    let savedToDisk = false;
+
+    // 1. Try saving to public/uploads directory (local dev and writable servers)
+    try {
+      if (!fs.existsSync(UPLOADS_DIR)) {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+      }
+      const ext = metadata.format === "jpeg" ? "jpg" : metadata.format;
+      const uniqueFileName = `${crypto.randomUUID()}.${ext}`;
+      const destinationPath = path.join(UPLOADS_DIR, uniqueFileName);
+      await fs.promises.writeFile(destinationPath, buffer);
+      publicUrl = `/uploads/${uniqueFileName}`;
+      savedToDisk = true;
+    } catch (diskErr) {
+      console.warn("Notice: Local uploads folder not writable, utilizing resilient serverless image pipeline:", diskErr);
     }
 
-    // Determine extension
-    let ext = metadata.format === "jpeg" ? "jpg" : metadata.format;
-    const uniqueFileName = `${crypto.randomUUID()}.${ext}`;
-    const destinationPath = path.join(UPLOADS_DIR, uniqueFileName);
-
-    await fs.promises.writeFile(destinationPath, buffer);
-
-    const publicUrl = `/uploads/${uniqueFileName}`;
+    // 2. Serverless fallback: Convert to an optimized WebP base64 Data URI
+    if (!savedToDisk) {
+      const optimizedBuffer = await sharp(buffer)
+        .resize({ width: 1400, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer();
+      publicUrl = `data:image/webp;base64,${optimizedBuffer.toString("base64")}`;
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Image uploaded successfully",
+      message: "Image processed and uploaded successfully",
       url: publicUrl,
       width: metadata.width,
       height: metadata.height,
-      format: metadata.format,
+      format: savedToDisk ? metadata.format : "webp",
       size: file.size,
     });
   } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ProjectItem } from "@/lib/types";
+import { ProjectItem, PublicationStatus } from "@/lib/types";
 import ImageUploader from "./ImageUploader";
 import {
   Plus,
@@ -23,12 +23,19 @@ interface SectionProjectsProps {
 }
 
 export default function SectionProjects({ initialData, onSave }: SectionProjectsProps) {
-  const [projects, setProjects] = useState<ProjectItem[]>(initialData);
+  const [projects, setProjects] = useState<ProjectItem[]>(initialData || []);
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [techInput, setTechInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Sync if parent updates
+  React.useEffect(() => {
+    if (initialData) {
+      setProjects(initialData);
+    }
+  }, [initialData]);
 
   const handleStartCreate = () => {
     const newProj: ProjectItem = {
@@ -50,7 +57,7 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
     setTechInput("");
   };
 
-  const handleMove = (index: number, direction: "up" | "down") => {
+  const handleMove = async (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= projects.length) return;
 
@@ -61,23 +68,43 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
     // Re-index order property
     const reordered = copy.map((p, idx) => ({ ...p, order: idx + 1 }));
     setProjects(reordered);
+    setSaving(true);
+    const ok = await onSave(reordered);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "published" ? "draft" : "published" }
-          : p
-      )
+  const handleToggleStatus = async (id: string) => {
+    const updated = projects.map((p) =>
+      p.id === id
+        ? { ...p, status: (p.status === "published" ? "draft" : "published") as PublicationStatus }
+        : p
     );
+    setProjects(updated);
+    setSaving(true);
+    const ok = await onSave(updated);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
-  const handleDeleteProject = (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
     const filtered = projects.filter((p) => p.id !== id);
     const reordered = filtered.map((p, idx) => ({ ...p, order: idx + 1 }));
     setProjects(reordered);
+    setSaving(true);
+    const ok = await onSave(reordered);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
   const handleAddTechTag = () => {
@@ -100,7 +127,7 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
     });
   };
 
-  const handleSaveModal = (e: React.FormEvent) => {
+  const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
 
@@ -109,16 +136,27 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
       return;
     }
 
+    let nextProjects: ProjectItem[];
     if (isCreating) {
-      setProjects((prev) => [...prev, editingProject]);
+      nextProjects = [...projects, editingProject];
     } else {
-      setProjects((prev) =>
-        prev.map((p) => (p.id === editingProject.id ? editingProject : p))
+      nextProjects = projects.map((p) =>
+        p.id === editingProject.id ? editingProject : p
       );
     }
 
+    setProjects(nextProjects);
     setEditingProject(null);
     setIsCreating(false);
+
+    // Persist immediately to database and public website
+    setSaving(true);
+    const success = await onSave(nextProjects);
+    setSaving(false);
+    if (success) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    }
   };
 
   const handleSaveAll = async () => {
@@ -296,6 +334,28 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Bottom Save & Add Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-white/[0.08]">
+        <button
+          type="button"
+          onClick={handleStartCreate}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#202028] hover:bg-[#282834] border border-white/[0.1] text-xs font-semibold text-white transition-all cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#FF3028]" />
+          <span>Add Another Project</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSaveAll}
+          disabled={saving}
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saving ? "Saving to Database..." : "Save All Projects"}</span>
+        </button>
       </div>
 
       {/* Edit / Create Project Modal */}
@@ -515,9 +575,11 @@ export default function SectionProjects({ initialData, onSave }: SectionProjects
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-md cursor-pointer active:scale-95"
                 >
-                  Apply to Projects List
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>{saving ? "Saving to Database..." : "Save Project & Persist"}</span>
                 </button>
               </div>
             </form>

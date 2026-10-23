@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TravelContent, TravelStory } from "@/lib/types";
+import { TravelContent, TravelStory, PublicationStatus, TravelFollower } from "@/lib/types";
 import ImageUploader from "./ImageUploader";
 import {
   Plus,
@@ -19,6 +19,10 @@ import {
   Sparkles,
   Camera,
   Image as ImageIcon,
+  Mail,
+  Users,
+  ClipboardCopy,
+  Shield,
 } from "lucide-react";
 
 interface SectionTravelProps {
@@ -33,6 +37,41 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
+  const [copiedEmails, setCopiedEmails] = useState(false);
+  const [deletingFollowerId, setDeletingFollowerId] = useState<string | null>(null);
+
+  // Sync if parent updates
+  React.useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
+  const handleDeleteFollower = async (followerId: string) => {
+    if (!window.confirm("Remove this follower from the expedition list?")) return;
+    setDeletingFollowerId(followerId);
+    const currentFollowers = data.followers || [];
+    const updatedFollowers = currentFollowers.filter((f) => f.id !== followerId);
+    const nextData = { ...data, followers: updatedFollowers };
+    setData(nextData);
+
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    setDeletingFollowerId(null);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    }
+  };
+
+  const handleCopyAllEmails = () => {
+    const emails = (data.followers || []).map((f) => f.email).filter(Boolean).join(", ");
+    if (!emails) return;
+    navigator.clipboard.writeText(emails);
+    setCopiedEmails(true);
+    setTimeout(() => setCopiedEmails(false), 2500);
+  };
 
   const handleStartCreate = () => {
     const newStory: TravelStory = {
@@ -60,7 +99,7 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
     setNewGalleryUrl("");
   };
 
-  const handleMove = (index: number, direction: "up" | "down") => {
+  const handleMove = async (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= data.stories.length) return;
 
@@ -69,35 +108,67 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
     copy.splice(targetIndex, 0, moved);
 
     const reordered = copy.map((s, idx) => ({ ...s, order: idx + 1 }));
-    setData((prev) => ({ ...prev, stories: reordered }));
+    const nextData = { ...data, stories: reordered };
+    setData(nextData);
+
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
-  const handleToggleStatus = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      stories: prev.stories.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "published" ? "draft" : "published" }
-          : s
-      ),
+  const handleToggleStatus = async (id: string) => {
+    const updated = data.stories.map((s) =>
+      s.id === id
+        ? { ...s, status: (s.status === "published" ? "draft" : "published") as PublicationStatus }
+        : s
+    );
+    const nextData = { ...data, stories: updated };
+    setData(nextData);
+
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+  };
+
+  const handleToggleFeatured = async (id: string) => {
+    const updated = data.stories.map((s) => ({
+      ...s,
+      featured: s.id === id,
     }));
+    const nextData = { ...data, stories: updated };
+    setData(nextData);
+
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
-  const handleToggleFeatured = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      stories: prev.stories.map((s) => ({
-        ...s,
-        featured: s.id === id,
-      })),
-    }));
-  };
-
-  const handleDeleteStory = (id: string) => {
+  const handleDeleteStory = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this travel story?")) return;
     const filtered = data.stories.filter((s) => s.id !== id);
     const reordered = filtered.map((s, idx) => ({ ...s, order: idx + 1 }));
-    setData((prev) => ({ ...prev, stories: reordered }));
+    const nextData = { ...data, stories: reordered };
+    setData(nextData);
+
+    setSaving(true);
+    const ok = await onSave(nextData);
+    setSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
   const handleAddGalleryImage = (urlToAdd: string) => {
@@ -119,7 +190,7 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
     });
   };
 
-  const handleSaveModal = (e: React.FormEvent) => {
+  const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStory) return;
 
@@ -139,32 +210,38 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
         editingStory.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     };
 
+    let nextStories: TravelStory[];
     if (isCreating) {
-      setData((prev) => {
-        let stories = [...prev.stories];
-        if (normalizedStory.featured) {
-          stories = stories.map((s) => ({ ...s, featured: false }));
-        }
-        return {
-          ...prev,
-          stories: [...stories, normalizedStory],
-        };
-      });
+      let stories = [...data.stories];
+      if (normalizedStory.featured) {
+        stories = stories.map((s) => ({ ...s, featured: false }));
+      }
+      nextStories = [...stories, normalizedStory];
     } else {
-      setData((prev) => {
-        let stories = prev.stories.map((s) => (s.id === normalizedStory.id ? normalizedStory : s));
-        if (normalizedStory.featured) {
-          stories = stories.map((s) => (s.id === normalizedStory.id ? s : { ...s, featured: false }));
-        }
-        return {
-          ...prev,
-          stories,
-        };
-      });
+      let stories = data.stories.map((s) => (s.id === normalizedStory.id ? normalizedStory : s));
+      if (normalizedStory.featured) {
+        stories = stories.map((s) => (s.id === normalizedStory.id ? s : { ...s, featured: false }));
+      }
+      nextStories = stories;
     }
 
+    const nextData = {
+      ...data,
+      stories: nextStories,
+    };
+
+    setData(nextData);
     setEditingStory(null);
     setIsCreating(false);
+
+    // Persist immediately to database and public website
+    setSaving(true);
+    const success = await onSave(nextData);
+    setSaving(false);
+    if (success) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    }
   };
 
   const handleSaveAll = async () => {
@@ -400,6 +477,154 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Bottom Save & Add Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-white/[0.08]">
+        <button
+          type="button"
+          onClick={handleStartCreate}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#202028] hover:bg-[#282834] border border-white/[0.1] text-xs font-semibold text-white transition-all cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#FF3028]" />
+          <span>Add Another Journey</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSaveAll}
+          disabled={saving}
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs transition-all shadow-md cursor-pointer active:scale-95"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          <span>{saving ? "Saving to Database..." : "Save All Stories"}</span>
+        </button>
+      </div>
+
+      {/* Expedition Followers & Subscriber Management Card (Admin-Only with Emails) */}
+      <div className="mt-12 bg-[#121216] border border-white/[0.08] rounded-2xl p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF3028]/15 border border-[#FF3028]/30 text-[#FF3028] flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Expedition Followers & Subscribers
+                </h3>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                  <Shield className="w-2.5 h-2.5" />
+                  Admin Only
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Subscribers who clicked Follow. Follower emails are strictly kept private here and never shown to the public.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="px-3.5 py-1.5 rounded-xl bg-[#18181f] border border-white/[0.06] text-xs font-mono">
+              <span className="text-zinc-500">Subscribers: </span>
+              <span className="text-white font-bold">{data.followers?.length || 0}</span>
+            </div>
+
+            {data.followers && data.followers.length > 0 && (
+              <button
+                type="button"
+                onClick={handleCopyAllEmails}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#202028] hover:bg-[#282834] border border-white/[0.1] text-xs font-medium text-white transition-all cursor-pointer active:scale-95"
+                title="Copy all follower email addresses comma-separated"
+              >
+                {copiedEmails ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <ClipboardCopy className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Copy All Emails</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Followers List / Table */}
+        {!data.followers || data.followers.length === 0 ? (
+          <div className="py-8 text-center text-xs text-zinc-500">
+            No followers have subscribed yet. When visitors submit their Name and Email on the public travel section, they will appear here.
+          </div>
+        ) : (
+          <div className="divide-y divide-white/[0.05] border border-white/[0.06] rounded-xl overflow-hidden bg-[#16161c]">
+            {data.followers.map((follower) => {
+              const initials =
+                follower.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase() || "EX";
+
+              return (
+                <div
+                  key={follower.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#24242e] to-[#16161d] border border-white/[0.1] text-white flex items-center justify-center font-bold text-xs tracking-wider shrink-0">
+                      {initials}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                        <span>{follower.name}</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                          Follower
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Mail className="w-3 h-3 text-[#FF3028]" />
+                        <span className="text-xs text-zinc-300 font-mono select-all">
+                          {follower.email}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pl-12 sm:pl-0">
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      {follower.createdAt
+                        ? new Date(follower.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "Joined"}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={deletingFollowerId === follower.id}
+                      onClick={() => handleDeleteFollower(follower.id)}
+                      className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Remove follower"
+                    >
+                      {deletingFollowerId === follower.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Edit Story Modal */}
@@ -661,9 +886,11 @@ export default function SectionTravel({ initialData, onSave }: SectionTravelProp
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white text-xs font-semibold transition-all shadow-md cursor-pointer active:scale-95"
                 >
-                  Apply to Stories
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>{saving ? "Saving to Database..." : "Save Travel Story & Persist"}</span>
                 </button>
               </div>
             </form>

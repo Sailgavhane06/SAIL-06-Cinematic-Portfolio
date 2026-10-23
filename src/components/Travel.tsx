@@ -17,6 +17,11 @@ import {
   ArrowRight,
   Plane,
   Eye,
+  User,
+  Mail,
+  Users,
+  X,
+  Loader2,
 } from "lucide-react";
 
 interface TravelItem {
@@ -124,11 +129,30 @@ export default function Travel({
   const [travelItems, setTravelItems] = useState<TravelItem[]>(defaultTravels);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isTransitionActive, setIsTransitionActive] = useState(false);
+  const [followerName, setFollowerName] = useState("");
   const [email, setEmail] = useState("");
+  const [submittingFollow, setSubmittingFollow] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followMessage, setFollowMessage] = useState("");
+  const [publicFollowers, setPublicFollowers] = useState<Array<{ id: string; name: string; createdAt?: string }>>([]);
+  const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadPublicFollowers = () => {
+    fetch("/api/followers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json && json.success && Array.isArray(json.followers)) {
+          setPublicFollowers(json.followers);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadPublicFollowers();
+  }, []);
 
   const headingPart1 = travelData?.headingPart1 || "Exploring Beyond";
   const headingHighlight = travelData?.headingHighlight || "The Workbench.";
@@ -256,30 +280,41 @@ export default function Travel({
     reader.readAsDataURL(file);
   };
 
-  // Handle Follow Button (Email Only Required)
-  const handleFollowSubmit = (e: React.FormEvent) => {
+  // Handle Follow Button (Name + Email Required)
+  const handleFollowSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes("@")) return;
+    if (!followerName.trim() || !email.trim() || !email.includes("@")) return;
 
+    setSubmittingFollow(true);
     try {
-      const savedFollowers = localStorage.getItem(STORAGE_KEY_FOLLOWERS);
-      const followersList = savedFollowers ? JSON.parse(savedFollowers) : [];
-      if (!followersList.includes(email)) {
-        followersList.push(email);
-        localStorage.setItem(STORAGE_KEY_FOLLOWERS, JSON.stringify(followersList));
+      const res = await fetch("/api/followers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: followerName.trim(),
+          email: email.trim(),
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setIsFollowing(true);
+        setFollowMessage(json.message || `Thanks for following, ${followerName.trim()}!`);
+        setFollowerName("");
+        setEmail("");
+        loadPublicFollowers();
+      } else {
+        alert(json.error || "Failed to join followers. Please try again.");
       }
-    } catch (err) {
-      console.warn("Could not store follower email", err);
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setSubmittingFollow(false);
+      setTimeout(() => {
+        setIsFollowing(false);
+        setFollowMessage("");
+      }, 7000);
     }
-
-    setIsFollowing(true);
-    setFollowMessage(`Thanks for following! Updates will be sent to ${email}`);
-    setEmail("");
-
-    setTimeout(() => {
-      setIsFollowing(false);
-      setFollowMessage("");
-    }, 6000);
   };
 
   return (
@@ -482,7 +517,7 @@ export default function Travel({
           </div>
         </div>
 
-        {/* Travel Email Follow Banner (Requires Email Only) */}
+        {/* Travel Follow Banner (Name + Email) */}
         <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-[#141418] via-[#16161c] to-[#121215] border border-white/[0.08] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
           <div className="max-w-md">
             <div className="flex items-center gap-2 text-xs font-mono text-[#FF3028] mb-1.5 uppercase tracking-wider">
@@ -495,9 +530,22 @@ export default function Travel({
             <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-light">
               {followSubtitle}
             </p>
+
+            {/* Public follower name check button */}
+            <div className="pt-3 flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsFollowersModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 text-xs text-zinc-200 transition-all cursor-pointer group"
+              >
+                <Users className="w-3.5 h-3.5 text-[#FF3028] group-hover:scale-110 transition-transform" />
+                <span>See Who&apos;s Following ({publicFollowers.length})</span>
+              </button>
+              <span className="text-[11px] text-zinc-500 font-mono">• Emails protected</span>
+            </div>
           </div>
 
-          {/* Follow Form (Requires ONLY email) */}
+          {/* Follow Form with Name + Email */}
           <div className="w-full md:w-auto">
             {followMessage ? (
               <div className="flex items-center gap-2.5 bg-[#FF3028]/15 border border-[#FF3028]/40 px-5 py-3 rounded-xl text-xs sm:text-sm text-white font-medium animate-in fade-in">
@@ -507,28 +555,154 @@ export default function Travel({
             ) : (
               <form
                 onSubmit={handleFollowSubmit}
-                className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-[380px]"
+                className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto"
               >
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email to follow..."
-                  className="w-full px-4 py-2.5 rounded-full bg-white/[0.05] border border-white/10 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#FF3028] transition-colors"
-                />
+                {/* Name Input */}
+                <div className="relative w-full sm:w-40">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <User className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={followerName}
+                    onChange={(e) => setFollowerName(e.target.value)}
+                    placeholder="Your Name"
+                    className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#FF3028] transition-colors"
+                  />
+                </div>
+
+                {/* Email Input */}
+                <div className="relative w-full sm:w-52">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                    <Mail className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Your Email"
+                    className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#FF3028] transition-colors"
+                  />
+                </div>
+
+                {/* Follow Button */}
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#FF3028] hover:bg-[#ff453e] text-white font-semibold text-xs tracking-wide transition-all shadow-[0_0_20px_rgba(255,48,40,0.3)] shrink-0 cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+                  disabled={submittingFollow}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs tracking-wide transition-all shadow-[0_0_20px_rgba(255,48,40,0.3)] shrink-0 cursor-pointer active:scale-95 flex items-center justify-center gap-2"
                 >
-                  <Bell className="w-3.5 h-3.5" />
-                  <span>Follow</span>
+                  {submittingFollow ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Bell className="w-3.5 h-3.5" />
+                  )}
+                  <span>{submittingFollow ? "Joining..." : "Follow"}</span>
                 </button>
               </form>
             )}
           </div>
         </div>
       </div>
+
+      {/* Public Followers List Modal (Names and Dates ONLY - Zero Emails Shown) */}
+      {isFollowersModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-[#121216] border border-white/[0.1] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-[#FF3028]/15 text-[#FF3028] flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">
+                    Expedition Followers
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    {publicFollowers.length} {publicFollowers.length === 1 ? "explorer" : "explorers"} following
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFollowersModalOpen(false)}
+                className="text-zinc-500 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Privacy notice banner */}
+            <div className="px-5 py-2.5 bg-black/40 border-b border-white/[0.04] text-[11px] text-zinc-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <span>Public Directory: Names displayed. Contact emails remain strictly confidential.</span>
+            </div>
+
+            {/* Followers List */}
+            <div className="max-h-80 overflow-y-auto p-4 space-y-2">
+              {publicFollowers.length === 0 ? (
+                <div className="py-8 text-center text-xs text-zinc-500">
+                  No followers yet. Be the first to join by entering your name and email above!
+                </div>
+              ) : (
+                publicFollowers.map((follower) => {
+                  const initials =
+                    follower.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase() || "EX";
+
+                  return (
+                    <div
+                      key={follower.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#16161c] border border-white/[0.05] hover:border-white/[0.1] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#202028] to-[#141418] border border-white/[0.1] text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                          {initials}
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white tracking-tight">
+                            {follower.name}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 font-mono">
+                            Explorer
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-zinc-500 font-mono">
+                        {follower.createdAt
+                          ? new Date(follower.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Active"}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-white/[0.08] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsFollowersModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -26,6 +26,7 @@ function isSafeUrl(url: string): boolean {
 function invalidatePublicCaches() {
   try {
     revalidatePath("/", "layout");
+    revalidatePath("/", "page");
     revalidatePath("/travel", "page");
     revalidatePath("/api/content");
   } catch (err) {
@@ -79,7 +80,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // 2. Support updating a specific section
-    if (body.section && body.data) {
+    if (body.section && body.data !== undefined) {
       const sectionName = body.section as keyof SiteContent;
       const validSections: (keyof SiteContent)[] = [
         "hero",
@@ -144,3 +145,5 @@ export async function PUT(req: NextRequest) {
     );
   }
 }
+
+export const POST = PUT;
