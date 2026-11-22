@@ -187,7 +187,7 @@ export default function SectionHeroAbout({
         <div className="pt-4 border-t border-white/[0.06]">
           <ImageUploader
             label="Hero Cinematic Portrait Photo"
-            currentImageUrl={hero.portraitImage || "/sail-portrait.jpg"}
+            currentImageUrl={hero.portraitImage || "/sail-portrait.webp"}
             onImageChange={(url) => setHero({ ...hero, portraitImage: url })}
             helperText="Upload a high-resolution dark portrait photo. Recommended format: PNG or WebP with clean background integration."
           />
@@ -245,7 +245,7 @@ export default function SectionHeroAbout({
         <div className="pt-4 border-t border-white/[0.06]">
           <ImageUploader
             label="About Profile Photo"
-            currentImageUrl={about.profilePhoto || "/sail-portrait.jpg"}
+            currentImageUrl={about.profilePhoto || "/sail-portrait.webp"}
             onImageChange={(url) => setAbout({ ...about, profilePhoto: url })}
             helperText="Dedicated profile image for the About biography section."
           />

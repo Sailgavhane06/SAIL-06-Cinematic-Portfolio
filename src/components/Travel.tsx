@@ -356,7 +356,7 @@ export default function Travel({
               id="explore-my-travels-btn"
               onClick={handleExploreClick}
               disabled={isTransitionActive}
-              className="group relative flex items-center justify-center gap-3 bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-60 text-white px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-[0_0_28px_rgba(255,48,40,0.45)] hover:shadow-[0_0_40px_rgba(255,48,40,0.6)] active:scale-95"
+              className="group relative flex items-center justify-center gap-3 bg-[#E0261F] hover:bg-[#ff3b33] disabled:opacity-60 text-white px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold tracking-wide transition-all duration-300 cursor-pointer shadow-[0_0_28px_rgba(224,38,31,0.45)] hover:shadow-[0_0_40px_rgba(224,38,31,0.6)] active:scale-95"
               aria-label="Explore My Travels (Launch animated journey)"
             >
               <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
@@ -433,7 +433,7 @@ export default function Travel({
                   <span className="text-[#FF3028] font-bold">
                     JOURNEY {String(activeIndex + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-zinc-500">/</span>
+                  <span className="text-zinc-400">/</span>
                   <span className="text-zinc-400 font-mono">
                     {String(travelItems.length).padStart(2, "0")}
                   </span>
@@ -476,19 +476,23 @@ export default function Travel({
 
               {/* Navigation Controls: Previous / Next Buttons & Indicators */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 shrink-0">
-                {/* Dot / Dash Indicators */}
-                <div className="flex items-center gap-1.5">
+                {/* Dot / Dash Indicators with 44x44px accessible touch targets */}
+                <div className="flex items-center gap-1">
                   {travelItems.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveIndex(idx)}
-                      className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === activeIndex
-                          ? "w-8 bg-[#FF3028] shadow-[0_0_10px_#FF3028]"
-                          : "w-2 bg-white/30 hover:bg-white/60"
-                      }`}
+                      className="group relative flex items-center justify-center h-11 min-h-[44px] px-1.5 cursor-pointer focus:outline-none before:content-[''] before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:w-11 before:h-11 before:min-w-[44px] before:min-h-[44px]"
                       aria-label={`Go to journey ${idx + 1}`}
-                    />
+                    >
+                      <span
+                        className={`h-1.5 rounded-full transition-all duration-300 block ${
+                          idx === activeIndex
+                            ? "w-8 bg-[#FF3028] shadow-[0_0_10px_#FF3028]"
+                            : "w-2 bg-white/30 group-hover:bg-white/60"
+                        }`}
+                      />
+                    </button>
                   ))}
                 </div>
 
@@ -541,7 +545,7 @@ export default function Travel({
                 <Users className="w-3.5 h-3.5 text-[#FF3028] group-hover:scale-110 transition-transform" />
                 <span>See Who&apos;s Following ({publicFollowers.length})</span>
               </button>
-              <span className="text-[11px] text-zinc-500 font-mono">• Emails protected</span>
+              <span className="text-[11px] text-zinc-400 font-mono">• Emails protected</span>
             </div>
           </div>
 
@@ -591,7 +595,7 @@ export default function Travel({
                 <button
                   type="submit"
                   disabled={submittingFollow}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-50 text-white font-semibold text-xs tracking-wide transition-all shadow-[0_0_20px_rgba(255,48,40,0.3)] shrink-0 cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#E0261F] hover:bg-[#ff3b33] disabled:opacity-50 text-white font-semibold text-xs tracking-wide transition-all shadow-[0_0_20px_rgba(224,38,31,0.3)] shrink-0 cursor-pointer active:scale-95 flex items-center justify-center gap-2"
                 >
                   {submittingFollow ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -670,13 +674,13 @@ export default function Travel({
                           <div className="text-xs font-semibold text-white tracking-tight">
                             {follower.name}
                           </div>
-                          <div className="text-[10px] text-zinc-500 font-mono">
+                          <div className="text-[10px] text-zinc-400 font-mono">
                             Explorer
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-[10px] text-zinc-500 font-mono">
+                      <div className="text-[10px] text-zinc-400 font-mono">
                         {follower.createdAt
                           ? new Date(follower.createdAt).toLocaleDateString("en-US", {
                               month: "short",

@@ -33,7 +33,7 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-6">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-400">
             &copy; 2026 SAIL.06. All rights reserved.
           </span>
           <button

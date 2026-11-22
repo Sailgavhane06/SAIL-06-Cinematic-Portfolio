@@ -5,8 +5,8 @@ export async function GET(req: NextRequest) {
   const session = verifyAdminApiRequest(req);
   if (!session) {
     return NextResponse.json(
-      { authenticated: false, error: "Unauthorized" },
-      { status: 401 }
+      { authenticated: false, user: null },
+      { status: 200 }
     );
   }
 

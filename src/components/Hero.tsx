@@ -61,17 +61,30 @@ export default function Hero({
       )}
 
       {/* Background Portrait Plate Container */}
-      <div className="absolute inset-0 z-0 flex items-end justify-center pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 z-0 flex items-end justify-center pointer-events-none overflow-hidden contain-paint">
         {/* Responsive portrait wrapper: perfectly fits within viewport with tabletop grounded at bottom and entire head visible */}
-        <div className="relative h-[82svh] sm:h-[86svh] md:h-[88svh] lg:h-[90svh] max-h-[820px] w-auto flex items-end justify-center translate-x-[4%] sm:translate-x-[3%] lg:translate-x-[4%] xl:translate-x-[5%]">
+        <div
+          className="relative h-[82svh] sm:h-[86svh] md:h-[88svh] lg:h-[90svh] max-h-[820px] aspect-[1024/731] w-auto flex items-end justify-center translate-x-[4%] sm:translate-x-[3%] lg:translate-x-[4%] xl:translate-x-[5%]"
+          style={{ aspectRatio: "1024 / 731" }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={heroData.portraitImage || "/sail-portrait.jpg"}
+            src={heroData.portraitImage || "/sail-portrait.webp"}
             alt="Sail Gavhane — Creator & Electrical Engineer"
-            className="h-full w-auto max-w-none object-contain object-bottom filter contrast-[1.02]"
+            width={1024}
+            height={731}
+            fetchPriority="high"
+            decoding="async"
+            className="h-full w-auto max-w-none object-contain object-bottom filter contrast-[1.02] aspect-[1024/731]"
+            style={{ aspectRatio: "1024 / 731" }}
             onError={(e) => {
-              if (e.currentTarget.src !== window.location.origin + "/sail-portrait.jpg" && e.currentTarget.src !== "/sail-portrait.jpg") {
-                e.currentTarget.src = "/sail-portrait.jpg";
+              if (
+                e.currentTarget.src !== window.location.origin + "/sail-portrait.webp" &&
+                e.currentTarget.src !== "/sail-portrait.webp" &&
+                e.currentTarget.src !== window.location.origin + "/sail-portrait.jpg" &&
+                e.currentTarget.src !== "/sail-portrait.jpg"
+              ) {
+                e.currentTarget.src = "/sail-portrait.webp";
               }
             }}
           />

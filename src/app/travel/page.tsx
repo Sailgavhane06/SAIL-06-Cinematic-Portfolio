@@ -211,7 +211,7 @@ export default function TravelPage() {
             <span className="text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-zinc-200">
               SAIL.06
             </span>
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
               / TRAVEL ARCHIVE
             </span>
           </Link>
@@ -516,7 +516,7 @@ export default function TravelPage() {
 
                 {/* Footer Action */}
                 <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between">
-                  <span className="text-xs font-mono text-zinc-500">SAIL.06 EXPEDITIONS</span>
+                  <span className="text-xs font-mono text-zinc-400">SAIL.06 EXPEDITIONS</span>
                   <button
                     onClick={() => setSelectedStory(null)}
                     className="px-5 py-2.5 rounded-full bg-[#1e1e26] hover:bg-[#282834] text-xs font-semibold text-white transition-colors cursor-pointer"
@@ -540,7 +540,7 @@ export default function TravelPage() {
           <div className="pt-2">
             <Link
               href="/#contact"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#FF3028] hover:bg-[#ff453e] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(255,48,40,0.35)] cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#E0261F] hover:bg-[#ff3b33] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(224,38,31,0.35)] cursor-pointer active:scale-95"
             >
               <span>Get In Touch</span>
               <ArrowRight className="w-4 h-4" />

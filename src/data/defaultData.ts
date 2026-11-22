@@ -57,13 +57,13 @@ export const defaultSiteData: SiteData = {
     experienceYears: "5+",
     experienceLine1: "building projects, sharing learnings",
     experienceLine2: "and creating impact.",
-    portraitImage: "/sail-portrait.jpg",
+    portraitImage: "/sail-portrait.webp",
   },
   about: {
     quotePart1: "I don't just learn things.",
     quoteHighlight: "I build things.",
     bio: "I am Sail Gavhane — an electrical engineer, software builder, and founder driven by curiosity and an uncompromising commitment to craftsmanship. I merge the precision of hardware with the agility of modern software to build real-world solutions.",
-    profilePhoto: "/sail-portrait.jpg",
+    profilePhoto: "/sail-portrait.webp",
     pillars: [
       {
         id: "pillar-1",
@@ -164,7 +164,7 @@ export const defaultSiteData: SiteData = {
         category: "Hardware Engineering",
         readTime: "7 min read",
         date: "October 2026",
-        thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=80",
+        thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
         status: "published",
       },
       {
@@ -176,7 +176,7 @@ export const defaultSiteData: SiteData = {
         category: "Firmware & Architecture",
         readTime: "5 min read",
         date: "September 2026",
-        thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1000&q=80",
+        thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
         status: "published",
       },
       {
@@ -188,7 +188,7 @@ export const defaultSiteData: SiteData = {
         category: "Philosophy & Building",
         readTime: "4 min read",
         date: "August 2026",
-        thumbnail: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+        thumbnail: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
         status: "published",
       },
     ],

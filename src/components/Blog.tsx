@@ -28,7 +28,7 @@ export default function Blog({
       category: "Hardware Engineering",
       readTime: "7 min read",
       date: "October 2026",
-      thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+      thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
       status: "published",
     },
     {
@@ -42,7 +42,7 @@ export default function Blog({
       category: "Firmware & Architecture",
       readTime: "5 min read",
       date: "September 2026",
-      thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
+      thumbnail: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
       status: "published",
     },
     {
@@ -56,7 +56,7 @@ export default function Blog({
       category: "Philosophy & Building",
       readTime: "4 min read",
       date: "August 2026",
-      thumbnail: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+      thumbnail: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
       status: "published",
     },
   ];
@@ -174,7 +174,7 @@ export default function Blog({
               </div>
 
               <div className="pt-4 border-t border-white/[0.05] flex items-center justify-between">
-                <span className="text-xs text-zinc-500 font-mono">{art.date}</span>
+                <span className="text-xs text-zinc-400 font-mono">{art.date}</span>
                 <span className="flex items-center gap-1 text-xs font-semibold text-[#FF3028] group-hover:translate-x-1 transition-transform">
                   Read Article
                   <ArrowRight className="w-3.5 h-3.5" />

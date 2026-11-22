@@ -217,7 +217,7 @@ export default function Contact({
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#FF3028] text-white font-semibold text-sm hover:bg-[#ff453e] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(255,48,40,0.3)] cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#E0261F] text-white font-semibold text-sm hover:bg-[#ff3b33] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 shadow-[0_0_20px_rgba(224,38,31,0.3)] cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>{isSending ? "Sending..." : "Send Message"}</span>
