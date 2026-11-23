@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   Lock,
   Mail,
+  User,
   ArrowRight,
   ShieldCheck,
   AlertCircle,
@@ -23,6 +24,7 @@ function LoginForm() {
   const nextUrl = searchParams.get("next") || "/admin";
 
   const [viewMode, setViewMode] = useState<"login" | "otp">("login");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,10 +35,8 @@ function LoginForm() {
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // OTP state
-  const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [challengeToken, setChallengeToken] = useState<string>("");
 
   // Check if already authenticated
   useEffect(() => {
@@ -50,7 +50,7 @@ function LoginForm() {
       .catch(() => {});
   }, [router, nextUrl]);
 
-  // Google Sign-In
+  // Google Sign-In attempt (restricted to single-user authentication)
   const handleGoogleLogin = async () => {
     setError(null);
     setSuccessNotice(null);
@@ -63,31 +63,33 @@ function LoginForm() {
         body: JSON.stringify({ email: email.trim() || undefined }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Google Sign-In failed. Please try again.");
+        setError(data.error || "Unauthorized Access");
         setGoogleLoading(false);
         return;
       }
-
-      setSuccessNotice("Google Sign-In successful! Redirecting to dashboard...");
-      setGoogleLoading(false);
-
-      setTimeout(() => {
-        window.location.href = nextUrl;
-      }, 600);
     } catch {
-      setError("Network or server error during Google Sign-In.");
+      setError("Unauthorized Access");
       setGoogleLoading(false);
     }
   };
 
-  // Password Submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Step 1: Verify Credentials (Username, Password, and Email) and trigger OTP
+  const handleSubmitCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessNotice(null);
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanUsername || !cleanEmail || !password) {
+      setError("Unauthorized Access");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -95,33 +97,38 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim() || undefined,
-          password,
+          username: cleanUsername,
+          email: cleanEmail,
+          password: password,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Authentication failed. Please verify your credentials.");
+        setError(data.error || "Unauthorized Access");
         setLoading(false);
         return;
       }
 
-      setSuccessNotice("Credentials verified! Redirecting to dashboard...");
-      setLoading(false);
+      if (data.challengeToken) {
+        setChallengeToken(data.challengeToken);
+      }
 
-      setTimeout(() => {
-        window.location.href = nextUrl;
-      }, 600);
+      setSuccessNotice(
+        data.message ||
+          "Credentials verified! 6-digit OTP sent to sailgavhane06@gmail.com."
+      );
+      setLoading(false);
+      setViewMode("otp");
     } catch {
-      setError("Network or server error. Please try again.");
+      setError("Unauthorized Access");
       setLoading(false);
     }
   };
 
-  // Request OTP
-  const handleSendOtp = async () => {
+  // Resend OTP
+  const handleResendOtp = async () => {
     setError(null);
     setSuccessNotice(null);
     setOtpLoading(true);
@@ -130,59 +137,48 @@ function LoginForm() {
       const res = await fetch("/api/admin/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          password: password,
+          challengeToken: challengeToken || undefined,
+        }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Failed to dispatch OTP. Please try again.");
+        setError(data.error || "Unauthorized Access");
         setOtpLoading(false);
         return;
       }
 
-      // Direct client browser delivery via Web3Forms API (100% reliable on live hosting/mobile/desktop)
-      if (data.otpCode) {
-        try {
-          const w3fKey = atob("NTgxYjAzNWMtMWUxZi00ZDAwLTkyY2EtNDI5OTRmNzg2NTBh");
-          const targetRecipient = data.targetEmail || email.trim() || atob("c2FpbGdhdmhhbmUwNkBnbWFpbC5jb20=");
-          const fd = new FormData();
-          fd.append("access_key", w3fKey);
-          fd.append("name", "SAIL.06 Security");
-          fd.append("from_name", "SAIL.06 Security");
-          fd.append("email", targetRecipient);
-          fd.append("subject", `Your SAIL.06 Password Reset Code: ${data.otpCode}`);
-          fd.append(
-            "message",
-            `Hello Sail,\n\nYour SAIL.06 admin password reset verification code is:\n\n${data.otpCode}\n\nThis OTP is valid for 10 minutes.\nIf you did not request this code, no changes have been made to your account.\n\n— SAIL.06 Security System`
-          );
-
-          await fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            body: fd,
-          });
-        } catch (w3fErr) {
-          console.warn("Client Web3Forms dispatch note:", w3fErr);
-        }
+      if (data.challengeToken) {
+        setChallengeToken(data.challengeToken);
       }
 
-      setOtpSent(true);
-      setSuccessNotice(data.message || "OTP code sent to your registered Gmail. Please check inbox.");
-      if (data.debugCode) {
-        setOtpCode(data.debugCode);
-      }
+      setSuccessNotice(
+        data.message || "Fresh 6-digit OTP sent to sailgavhane06@gmail.com."
+      );
       setOtpLoading(false);
     } catch {
-      setError("Failed to reach OTP verification service.");
+      setError("Unauthorized Access");
       setOtpLoading(false);
     }
   };
 
-  // Verify OTP & Update Password
-  const handleVerifyOtpAndUpdate = async (e: React.FormEvent) => {
+  // Step 2: Verify OTP and Unlock Dashboard
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessNotice(null);
+
+    const cleanOtp = otpCode.trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setError("Unauthorized Access");
+      return;
+    }
+
     setOtpLoading(true);
 
     try {
@@ -190,30 +186,29 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          otp: otpCode.trim(),
-          newPassword: newPassword,
+          otp: cleanOtp,
+          challengeToken: challengeToken || undefined,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Invalid OTP code. Please check and try again.");
+        setError(data.error || "Unauthorized Access");
         setOtpLoading(false);
         return;
       }
 
-      setSuccessNotice("Password updated successfully! Redirecting to dashboard...");
-      setPassword(newPassword);
+      setSuccessNotice(
+        "OTP verified successfully! Redirecting to dashboard..."
+      );
       setOtpLoading(false);
 
-      // Automatically redirect to admin dashboard
       setTimeout(() => {
         window.location.href = nextUrl;
-      }, 700);
+      }, 600);
     } catch {
-      setError("Network error verifying OTP.");
+      setError("Unauthorized Access");
       setOtpLoading(false);
     }
   };
@@ -224,8 +219,12 @@ function LoginForm() {
       <header className="w-full max-w-7xl mx-auto px-6 py-8 flex items-center justify-between border-b border-white/[0.05]">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-3 h-3 bg-[#FF3028] rounded-full group-hover:scale-125 transition-transform" />
-          <span className="text-xl font-black tracking-widest text-white">SAIL.06</span>
-          <span className="text-xs uppercase tracking-wider text-zinc-500 font-mono">/ PORTFOLIO</span>
+          <span className="text-xl font-black tracking-widest text-white">
+            SAIL.06
+          </span>
+          <span className="text-xs uppercase tracking-wider text-zinc-500 font-mono">
+            / PORTFOLIO
+          </span>
         </Link>
         <Link
           href="/"
@@ -247,7 +246,7 @@ function LoginForm() {
               Admin Authentication
             </h1>
             <p className="mt-2 text-sm text-zinc-400">
-              Sign in with Admin ID & Password or Google Account.
+              Single-user restricted access &bull; Two-step verification required.
             </p>
           </div>
 
@@ -268,7 +267,7 @@ function LoginForm() {
             )}
 
             {viewMode === "otp" ? (
-              /* OTP RESET VIEW */
+              /* STEP 2: TWO-STEP OTP VERIFICATION */
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -279,111 +278,90 @@ function LoginForm() {
                       setSuccessNotice(null);
                     }}
                     className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                    title="Back to login"
+                    title="Back to credentials"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   <div>
-                    <h2 className="text-lg font-bold text-white tracking-tight">Reset Password with OTP</h2>
-                    <p className="text-xs text-zinc-400">Target: {email || "Authorized Admin Account"}</p>
+                    <h2 className="text-lg font-bold text-white tracking-tight">
+                      Two-Step OTP Verification
+                    </h2>
+                    <p className="text-xs text-zinc-400">
+                      Step 2: Enter 6-digit verification code
+                    </p>
                   </div>
                 </div>
 
-                {!otpSent ? (
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
-                      <p className="text-zinc-400">
-                        Click below to generate and send a 6-digit OTP code to your registered admin Gmail address:
-                      </p>
-                      <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                        {email || "Registered Admin Gmail"}
-                      </div>
-                    </div>
+                <div className="mb-5 p-4 rounded-xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
+                  <p className="text-zinc-400">
+                    A 6-digit OTP code was sent exclusively to the authorized email:
+                  </p>
+                  <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
+                    sailgavhane06@gmail.com
+                  </div>
+                </div>
 
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                      6-Digit OTP Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      placeholder="123456"
+                      className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl px-4 py-3 text-center text-xl font-mono tracking-widest text-white outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={otpLoading}
+                    className="w-full py-3 px-4 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(255,48,40,0.35)] cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99]"
+                  >
+                    {otpLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Verifying OTP...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4" />
+                        <span>Verify OTP & Access Dashboard</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex justify-between items-center pt-2">
                     <button
                       type="button"
-                      onClick={handleSendOtp}
+                      onClick={handleResendOtp}
                       disabled={otpLoading}
-                      className="w-full py-3 px-4 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(255,48,40,0.35)] cursor-pointer flex items-center justify-center gap-2"
+                      className="text-xs text-zinc-400 hover:text-[#FF3028] transition-colors cursor-pointer"
                     >
-                      {otpLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Dispatching OTP...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-4 h-4" />
-                          <span>Send OTP Code to Gmail</span>
-                        </>
-                      )}
+                      Resend Code?
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("login");
+                        setError(null);
+                        setSuccessNotice(null);
+                      }}
+                      className="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      &larr; Back to Credentials
                     </button>
                   </div>
-                ) : (
-                  <form onSubmit={handleVerifyOtpAndUpdate} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                        6-Digit OTP Code
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
-                        placeholder="123456"
-                        className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest text-white outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                        New Admin Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showNewPassword ? "text" : "password"}
-                          required
-                          minLength={6}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Enter new password"
-                          className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl pl-4 pr-11 py-3 text-sm text-white outline-none font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300"
-                        >
-                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={otpLoading}
-                      className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {otpLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Updating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Key className="w-4 h-4" />
-                          <span>Verify OTP & Save New Password</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
+                </form>
               </div>
             ) : (
-              /* LOGIN VIEW */
+              /* STEP 1: CREDENTIALS (USERNAME, EMAIL, PASSWORD) */
               <div>
-                {/* DIRECT GOOGLE SIGN IN BUTTON */}
+                {/* GOOGLE SIGN IN BUTTON */}
                 <div className="space-y-3 mb-6">
                   <button
                     type="button"
@@ -394,7 +372,7 @@ function LoginForm() {
                     {googleLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin text-zinc-900" />
-                        <span>Verifying Google Account...</span>
+                        <span>Verifying Access...</span>
                       </>
                     ) : (
                       <>
@@ -421,53 +399,63 @@ function LoginForm() {
                     )}
                   </button>
                   <div className="text-center text-[10px] text-zinc-500 font-mono">
-                    Direct access for verified admin account
+                    Authorized single-user access only
                   </div>
                 </div>
 
                 <div className="relative flex items-center justify-center mb-6">
                   <div className="w-full border-t border-white/[0.08]" />
                   <span className="absolute bg-[#121216] px-3 text-[10px] uppercase font-mono tracking-wider text-zinc-500">
-                    Or with Admin Password
+                    Or with Admin Credentials
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmitCredentials} className="space-y-4">
+                  {/* Username Field */}
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
-                      Admin ID / Email
+                      Username
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter Username"
+                        className="w-full bg-[#18181e] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-3 text-sm font-mono outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Authorized Email Field */}
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                      Authorized Email
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input
-                        type="text"
+                        type="email"
+                        required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter Admin ID or Email (e.g. admin)"
+                        placeholder="Enter Authorized Email"
                         className="w-full bg-[#18181e] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-3 text-sm font-mono outline-none"
                       />
                     </div>
                   </div>
 
+                  {/* Password Field */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setViewMode("otp");
-                          setError(null);
-                          setSuccessNotice(null);
-                        }}
-                        className="text-xs text-[#FF3028] hover:underline cursor-pointer"
-                      >
-                        Reset via OTP?
-                      </button>
-                    </div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+                      Password
+                    </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                         <Lock className="w-4 h-4" />
@@ -477,7 +465,7 @@ function LoginForm() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter admin password"
+                        placeholder="Enter Password"
                         className="w-full bg-[#18181e] border border-white/[0.1] focus:border-[#FF3028] rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#FF3028] transition-all font-mono"
                       />
                       <button
@@ -486,7 +474,11 @@ function LoginForm() {
                         className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
                         tabIndex={-1}
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -499,11 +491,11 @@ function LoginForm() {
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Verifying session...</span>
+                        <span>Verifying Credentials...</span>
                       </>
                     ) : (
                       <>
-                        <span>Authenticate & Access Dashboard</span>
+                        <span>Verify Credentials &amp; Send OTP</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -514,7 +506,7 @@ function LoginForm() {
 
             <div className="mt-6 pt-5 border-t border-white/[0.06] text-center">
               <p className="text-xs text-zinc-500">
-                Encrypted Session • HMAC-SHA256 • HttpOnly Cookie
+                Encrypted Session &bull; Two-Step OTP Verification &bull; HttpOnly Cookie
               </p>
             </div>
           </div>
@@ -523,7 +515,7 @@ function LoginForm() {
 
       {/* Footer */}
       <footer className="w-full py-6 text-center text-xs text-zinc-600">
-        SAIL.06 Cinematic Portfolio • Authorized Access Only
+        SAIL.06 Cinematic Portfolio &bull; Authorized Access Only
       </footer>
     </div>
   );

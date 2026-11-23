@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Lock,
+  User,
   KeyRound,
   X,
   CheckCircle2,
@@ -34,6 +35,7 @@ export default function ProfileAuthModal({
   onLogoutSuccess,
 }: ProfileAuthModalProps) {
   const [viewMode, setViewMode] = useState<"login" | "otp">("login");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,10 +46,8 @@ export default function ProfileAuthModal({
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // OTP state
-  const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [challengeToken, setChallengeToken] = useState<string>("");
 
   // Reset form when modal opens
   useEffect(() => {
@@ -55,9 +55,8 @@ export default function ProfileAuthModal({
       setError(null);
       setSuccessNotice(null);
       setViewMode("login");
-      setOtpSent(false);
       setOtpCode("");
-      setNewPassword("");
+      setChallengeToken("");
       if (!isOwner) {
         setPassword("");
       }
@@ -77,7 +76,7 @@ export default function ProfileAuthModal({
 
   if (!isOpen) return null;
 
-  // Direct 1-Click Google Account Sign-In (No password needed)
+  // Google Account Sign-In attempt (blocked for single-user credential enforcement)
   const handleGoogleLogin = async () => {
     setError(null);
     setSuccessNotice(null);
@@ -90,32 +89,33 @@ export default function ProfileAuthModal({
         body: JSON.stringify({ email: email.trim() || undefined }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Google Sign-In failed. Please try again.");
+        setError(data.error || "Unauthorized Access");
         setGoogleLoading(false);
         return;
       }
-
-      setSuccessNotice("Signed in via Google! Unlocking edit bar...");
-      setGoogleLoading(false);
-
-      setTimeout(() => {
-        onLoginSuccess("Sail Gavhane");
-        onClose();
-      }, 700);
     } catch {
-      setError("Network or server error during Google Sign-In.");
+      setError("Unauthorized Access");
       setGoogleLoading(false);
     }
   };
 
-  // Email + Password login
-  const handleSubmitPassword = async (e: React.FormEvent) => {
+  // Step 1: Submit Credentials & Send OTP
+  const handleSubmitCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessNotice(null);
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanUsername || !cleanEmail || !password) {
+      setError("Unauthorized Access");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -123,34 +123,37 @@ export default function ProfileAuthModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim() || undefined,
+          username: cleanUsername,
+          email: cleanEmail,
           password: password,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Invalid credentials. Please verify your password.");
+        setError(data.error || "Unauthorized Access");
         setLoading(false);
         return;
       }
 
-      setSuccessNotice("Authentication verified! Unlocking edit bar...");
-      setLoading(false);
+      if (data.challengeToken) {
+        setChallengeToken(data.challengeToken);
+      }
 
-      setTimeout(() => {
-        onLoginSuccess("Sail Gavhane");
-        onClose();
-      }, 700);
+      setSuccessNotice(
+        data.message || "Credentials verified! 6-digit OTP sent to sailgavhane06@gmail.com."
+      );
+      setLoading(false);
+      setViewMode("otp");
     } catch {
-      setError("Network or server error. Please try again.");
+      setError("Unauthorized Access");
       setLoading(false);
     }
   };
 
-  // Request OTP to Gmail
-  const handleSendOtp = async () => {
+  // Resend OTP
+  const handleResendOtp = async () => {
     setError(null);
     setSuccessNotice(null);
     setOtpLoading(true);
@@ -159,59 +162,48 @@ export default function ProfileAuthModal({
       const res = await fetch("/api/admin/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          password: password,
+          challengeToken: challengeToken || undefined,
+        }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Failed to dispatch OTP. Please try again.");
+        setError(data.error || "Unauthorized Access");
         setOtpLoading(false);
         return;
       }
 
-      // Direct client browser delivery via Web3Forms API (100% reliable on live hosting/mobile/desktop)
-      if (data.otpCode) {
-        try {
-          const w3fKey = atob("NTgxYjAzNWMtMWUxZi00ZDAwLTkyY2EtNDI5OTRmNzg2NTBh");
-          const targetRecipient = data.targetEmail || email.trim() || atob("c2FpbGdhdmhhbmUwNkBnbWFpbC5jb20=");
-          const fd = new FormData();
-          fd.append("access_key", w3fKey);
-          fd.append("name", "SAIL.06 Security");
-          fd.append("from_name", "SAIL.06 Security");
-          fd.append("email", targetRecipient);
-          fd.append("subject", `Your SAIL.06 Password Reset Code: ${data.otpCode}`);
-          fd.append(
-            "message",
-            `Hello Sail,\n\nYour SAIL.06 admin password reset verification code is:\n\n${data.otpCode}\n\nThis OTP is valid for 10 minutes.\nIf you did not request this code, no changes have been made to your account.\n\n— SAIL.06 Security System`
-          );
-
-          await fetch("https://api.web3forms.com/submit", {
-            method: "POST",
-            body: fd,
-          });
-        } catch (w3fErr) {
-          console.warn("Client Web3Forms dispatch note:", w3fErr);
-        }
+      if (data.challengeToken) {
+        setChallengeToken(data.challengeToken);
       }
 
-      setOtpSent(true);
-      setSuccessNotice(data.message || "OTP code sent to your registered Gmail. Please check inbox.");
-      if (data.debugCode) {
-        setOtpCode(data.debugCode);
-      }
+      setSuccessNotice(
+        data.message || "Fresh 6-digit OTP sent to sailgavhane06@gmail.com."
+      );
       setOtpLoading(false);
     } catch {
-      setError("Failed to reach OTP verification service.");
+      setError("Unauthorized Access");
       setOtpLoading(false);
     }
   };
 
-  // Verify OTP and update password
-  const handleVerifyOtpAndUpdate = async (e: React.FormEvent) => {
+  // Step 2: Verify OTP and Unlock Edit Bar
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessNotice(null);
+
+    const cleanOtp = otpCode.trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setError("Unauthorized Access");
+      return;
+    }
+
     setOtpLoading(true);
 
     try {
@@ -219,31 +211,28 @@ export default function ProfileAuthModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          otp: otpCode.trim(),
-          newPassword: newPassword,
+          otp: cleanOtp,
+          challengeToken: challengeToken || undefined,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Invalid OTP code. Please check and try again.");
+        setError(data.error || "Unauthorized Access");
         setOtpLoading(false);
         return;
       }
 
-      setSuccessNotice(data.message || "Password updated successfully! Unlocking edit bar...");
-      setPassword(newPassword);
+      setSuccessNotice("OTP verified successfully! Unlocking edit bar...");
       setOtpLoading(false);
 
-      // Automatically authenticate and unlock owner edit controls
       setTimeout(() => {
         onLoginSuccess("Sail Gavhane");
         onClose();
-      }, 800);
+      }, 700);
     } catch {
-      setError("Network error verifying OTP.");
+      setError("Unauthorized Access");
       setOtpLoading(false);
     }
   };
@@ -293,7 +282,7 @@ export default function ProfileAuthModal({
                 Admin Mode Active
               </div>
               <h2 className="text-2xl font-black text-white tracking-tight">Sail Gavhane</h2>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">{email || "Admin Account"} • Full Editing Access</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">sailgavhane06@gmail.com &bull; Full Editing Access</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-left text-xs text-zinc-300 space-y-2">
@@ -307,7 +296,7 @@ export default function ProfileAuthModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">Authorized Account:</span>
-                <span className="text-white font-mono truncate max-w-[200px]">{email || "Verified Admin"}</span>
+                <span className="text-white font-mono truncate max-w-[200px]">sailgavhane06@gmail.com</span>
               </div>
             </div>
 
@@ -333,7 +322,7 @@ export default function ProfileAuthModal({
           </div>
         ) : viewMode === "otp" ? (
           /* ============================================================ */
-          /* FORGOT / CHANGE PASSWORD VIA GMAIL OTP VIEW                 */
+          /* STEP 2: TWO-STEP OTP VERIFICATION                           */
           /* ============================================================ */
           <div>
             <div className="flex items-center gap-3 mb-6">
@@ -345,156 +334,99 @@ export default function ProfileAuthModal({
                   setSuccessNotice(null);
                 }}
                 className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                title="Back to login"
+                title="Back to credentials"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight">Password Reset OTP</h2>
-                <p className="text-xs text-zinc-400">Target: {email || "Registered Admin Account"}</p>
+                <h2 className="text-xl font-black text-white tracking-tight">Two-Step Verification</h2>
+                <p className="text-xs text-zinc-400">Step 2: Enter 6-digit OTP</p>
               </div>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2.5 text-xs text-red-300 animate-in fade-in">
+              <div className="mb-4 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2.5 text-xs text-red-300 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             {successNotice && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 text-xs text-emerald-300 animate-in fade-in">
+              <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 text-xs text-emerald-300 animate-in fade-in">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{successNotice}</span>
               </div>
             )}
 
-            {!otpSent ? (
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
-                  <p className="text-zinc-400 leading-relaxed">
-                    Click the button below to generate a secure 6-digit OTP code to your registered Gmail account:
-                  </p>
-                  <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
-                    {email || "Registered Admin Gmail"}
-                  </div>
-                </div>
+            <div className="mb-4 p-4 rounded-2xl bg-[#181820] border border-white/[0.06] text-xs text-zinc-300 space-y-2">
+              <p className="text-zinc-400 leading-relaxed">
+                A 6-digit OTP code was sent exclusively to:
+              </p>
+              <div className="font-mono text-[#FF3028] font-bold text-sm bg-black/40 p-2.5 rounded-lg border border-white/[0.08] text-center">
+                sailgavhane06@gmail.com
+              </div>
+            </div>
 
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Enter 6-Digit OTP Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="123456"
+                  className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl px-4 py-3 text-center text-xl font-mono text-white tracking-widest outline-none transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={otpLoading}
+                className="w-full py-3 px-4 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(255,48,40,0.35)] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+              >
+                {otpLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying OTP...</span>
+                  </>
+                ) : (
+                  <>
+                    <Key className="w-4 h-4" />
+                    <span>Verify OTP &amp; Unlock Edit Mode</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex justify-between items-center pt-2">
                 <button
                   type="button"
-                  onClick={handleSendOtp}
+                  onClick={handleResendOtp}
                   disabled={otpLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-[#FF3028] hover:bg-[#ff453e] disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(255,48,40,0.35)] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                  className="text-[11px] text-zinc-400 hover:text-[#FF3028] transition-colors cursor-pointer"
                 >
-                  {otpLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Sending OTP Code...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4" />
-                      <span>Send OTP to Gmail</span>
-                    </>
-                  )}
+                  Resend code?
                 </button>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setViewMode("login");
-                      setError(null);
-                      setSuccessNotice(null);
-                    }}
-                    className="text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    ← Back to Sign In
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleVerifyOtpAndUpdate} className="space-y-4">
-                <div>
-                  <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
-                    Enter 6-Digit OTP Code
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="e.g. 123456"
-                    className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl px-4 py-2.5 text-center text-lg font-mono text-white tracking-widest outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-1.5">
-                    New Admin Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      required
-                      minLength={6}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
-                      className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl pl-4 pr-10 py-2.5 text-sm text-white outline-none transition-all font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
                 <button
-                  type="submit"
-                  disabled={otpLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(16,185,129,0.35)] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={() => {
+                    setViewMode("login");
+                    setError(null);
+                    setSuccessNotice(null);
+                  }}
+                  className="text-[11px] text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  {otpLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating Password...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Key className="w-4 h-4" />
-                      <span>Verify OTP & Set New Password</span>
-                    </>
-                  )}
+                  &larr; Back to Credentials
                 </button>
-
-                <div className="flex justify-between items-center pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={otpLoading}
-                    className="text-[11px] text-zinc-400 hover:text-[#FF3028] transition-colors cursor-pointer"
-                  >
-                    Resend code?
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("login")}
-                    className="text-[11px] text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
+              </div>
+            </form>
           </div>
         ) : (
           /* ============================================================ */
-          /* LOGGED-OUT OWNER LOGIN WINDOW (GOOGLE + PASSWORD)            */
+          /* STEP 1: LOGGED-OUT OWNER CREDENTIALS (USERNAME, EMAIL, PASS)  */
           /* ============================================================ */
           <div>
             <div className="text-center mb-6">
@@ -503,7 +435,7 @@ export default function ProfileAuthModal({
               </div>
               <h2 className="text-2xl font-black text-white tracking-tight">Admin Authentication</h2>
               <p className="text-xs text-zinc-400 mt-1">
-                Access portfolio editing via Admin ID & Password or Google Account.
+                Single-user restricted access &bull; Two-step verification required.
               </p>
             </div>
 
@@ -523,7 +455,7 @@ export default function ProfileAuthModal({
               </div>
             )}
 
-            {/* DIRECT 1-CLICK GOOGLE SIGN IN BUTTON */}
+            {/* GOOGLE SIGN IN BUTTON */}
             <div className="space-y-3 mb-5">
               <button
                 id="google-signin-btn"
@@ -535,11 +467,10 @@ export default function ProfileAuthModal({
                 {googleLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-zinc-900" />
-                    <span>Verifying Google Account...</span>
+                    <span>Verifying Access...</span>
                   </>
                 ) : (
                   <>
-                    {/* Google Multicolor SVG Icon */}
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                       <path
                         fill="#4285F4"
@@ -563,7 +494,7 @@ export default function ProfileAuthModal({
                 )}
               </button>
               <div className="text-center text-[10px] text-zinc-500 font-mono">
-                Direct login for verified admin account
+                Authorized single-user access only
               </div>
             </div>
 
@@ -571,31 +502,57 @@ export default function ProfileAuthModal({
             <div className="relative flex items-center justify-center mb-5">
               <div className="w-full border-t border-white/[0.08]" />
               <span className="absolute bg-[#121217] px-3 text-[10px] uppercase font-mono tracking-wider text-zinc-500">
-                Or with Admin Password
+                Or with Admin Credentials
               </span>
             </div>
 
-            {/* PASSWORD FORM */}
-            <form onSubmit={handleSubmitPassword} className="space-y-4">
-              {/* Admin ID / Email Input */}
+            {/* CREDENTIALS FORM */}
+            <form onSubmit={handleSubmitCredentials} className="space-y-4">
+              {/* Username Input */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-                    Admin ID / Email
+                    Username
                   </label>
                   <span className="text-[10px] text-zinc-500 font-mono">Admin Portal</span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="admin-auth-username"
+                    name="username"
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter Username"
+                    className="w-full bg-[#181820] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Authorized Email Input */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                    Authorized Email
+                  </label>
+                  <span className="text-[10px] text-zinc-500 font-mono">Registered Email</span>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
-                    id="admin-auth-id"
-                    name="identifier"
-                    type="text"
+                    id="admin-auth-email"
+                    name="email"
+                    type="email"
+                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter Admin ID or Email (e.g. admin)"
+                    placeholder="Enter Authorized Email"
                     className="w-full bg-[#181820] border border-white/[0.08] focus:border-[#FF3028] text-white rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono"
                   />
                 </div>
@@ -607,18 +564,6 @@ export default function ProfileAuthModal({
                   <label className="block text-[11px] font-mono uppercase tracking-wider text-zinc-400">
                     Password
                   </label>
-                  <button
-                    id="btn-switch-to-otp"
-                    type="button"
-                    onClick={() => {
-                      setViewMode("otp");
-                      setError(null);
-                      setSuccessNotice(null);
-                    }}
-                    className="text-[11px] text-[#FF3028] hover:underline cursor-pointer"
-                  >
-                    Forgot / Reset via OTP?
-                  </button>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
@@ -631,7 +576,7 @@ export default function ProfileAuthModal({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter admin password"
+                    placeholder="Enter Password"
                     className="w-full bg-[#181820] border border-white/[0.1] focus:border-[#FF3028] focus:ring-1 focus:ring-[#FF3028] rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all font-mono"
                   />
                   <button
@@ -659,7 +604,7 @@ export default function ProfileAuthModal({
                 ) : (
                   <>
                     <KeyRound className="w-4 h-4" />
-                    <span>Open Edit Bar For All Sections</span>
+                    <span>Verify Credentials &amp; Send OTP</span>
                   </>
                 )}
               </button>
@@ -667,7 +612,7 @@ export default function ProfileAuthModal({
 
             <div className="mt-5 text-center">
               <p className="text-[11px] text-zinc-500 font-mono">
-                Authorized Admin Access Only
+                Authorized Single-User Access Only
               </p>
             </div>
           </div>

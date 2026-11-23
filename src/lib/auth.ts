@@ -12,21 +12,34 @@ export const COOKIE_NAME = "sail06_admin_session";
 export const OTP_COOKIE_NAME = "sail06_otp_challenge";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-// Runtime decoding helpers so raw credential literals are never baked into compiled chunks
+// Base64 runtime fallbacks so credentials are not stored in plaintext in compiled bundles
 const b64d = (s: string) => Buffer.from(s, "base64").toString("utf-8");
-const DEFAULT_OWNER_EMAIL_B64 = "c2FpbGdhdmhhbmUwNkBnbWFpbC5jb20=";
-const DEFAULT_OWNER_PASSWORD_B64 = "U0FJTEAwNjc=";
+const DEFAULT_USERNAME_B64 = "JGFpbDA2"; // $ail06
+const DEFAULT_PASSWORD_B64 = "JGFpbDA2QEdhdmhhbmU="; // $ail06@Gavhane
+const DEFAULT_EMAIL_B64 = "c2FpbGdhdmhhbmUwNkBnbWFpbC5jb20="; // sailgavhane06@gmail.com
 const DEFAULT_WEB3FORMS_KEY_B64 = "NTgxYjAzNWMtMWUxZi00ZDAwLTkyY2EtNDI5OTRmNzg2NTBh";
 const DEFAULT_SESSION_SECRET_B64 = "c2FpbDA2X3NlY3VyZV9hdXRoX3Nlc3Npb25fc2VjcmV0XzIwMjZfa2V5";
 
-export function getAuthorizedOwnerEmail(): string {
-  const k = ["ADMIN", "EMAIL"].join("_");
-  return process.env[k] || b64d(DEFAULT_OWNER_EMAIL_B64);
+export function getAuthorizedUsername(): string {
+  const k = ["ADMIN", "USERNAME"].join("_");
+  let val = process.env[k];
+  if (!val || val.trim() === "") return b64d(DEFAULT_USERNAME_B64);
+  if (val.startsWith("\\$")) val = val.substring(1);
+  return val.trim();
 }
 
-export function getDefaultOwnerPassword(): string {
+export function getAuthorizedPassword(): string {
   const k = ["ADMIN", "PASSWORD"].join("_");
-  return process.env[k] || b64d(DEFAULT_OWNER_PASSWORD_B64);
+  let val = process.env[k];
+  if (!val || val.trim() === "" || val === "@Gavhane") return b64d(DEFAULT_PASSWORD_B64);
+  if (val.startsWith("\\$")) val = val.substring(1);
+  return val;
+}
+
+export function getAuthorizedOwnerEmail(): string {
+  const k = ["ADMIN", "EMAIL"].join("_");
+  const val = process.env[k];
+  return (val && val.trim()) ? val.trim() : b64d(DEFAULT_EMAIL_B64);
 }
 
 export function getWeb3FormsAccessKey(): string {
@@ -34,20 +47,26 @@ export function getWeb3FormsAccessKey(): string {
   return process.env[k] || b64d(DEFAULT_WEB3FORMS_KEY_B64);
 }
 
-export const AUTHORIZED_OWNER_EMAIL = getAuthorizedOwnerEmail();
-export const DEFAULT_OWNER_PASSWORD = getDefaultOwnerPassword();
+export function getSessionSecret(): string {
+  const envSecret = process.env[["ADMIN", "SESSION", "SECRET"].join("_")];
+  if (envSecret && envSecret.trim()) {
+    return envSecret.trim();
+  }
+  return b64d(DEFAULT_SESSION_SECRET_B64);
+}
 
-// In-memory / persistent storage paths for updated password & OTP
+export const AUTHORIZED_OWNER_EMAIL = getAuthorizedOwnerEmail();
+export const AUTHORIZED_USERNAME = getAuthorizedUsername();
+
+// In-memory / persistent storage paths for OTP state
 const DATA_DIR = path.join(process.cwd(), "data");
 const AUTH_STORE_PATH = path.join(process.cwd(), "data", "auth-store.json");
 
 interface AuthStore {
-  customPassword?: string;
   otpCode?: string;
   otpExpiresAt?: number;
 }
 
-// Memory cache attached to globalThis to survive serverless function warm re-use
 const globalAuth = globalThis as unknown as {
   __sail06_auth_store?: AuthStore;
 };
@@ -58,9 +77,6 @@ if (!globalAuth.__sail06_auth_store) {
 
 function readAuthStore(): AuthStore {
   const current = globalAuth.__sail06_auth_store || {};
-  if (current.customPassword) {
-    return current;
-  }
   try {
     if (fs.existsSync(AUTH_STORE_PATH)) {
       const data = JSON.parse(fs.readFileSync(AUTH_STORE_PATH, "utf8"));
@@ -91,30 +107,46 @@ function saveAuthStore(updates: Partial<AuthStore>) {
 }
 
 /**
- * Returns current active password:
- * 1. Custom password updated via OTP
- * 2. process.env.ADMIN_PASSWORD (if set in hosting environment)
- * 3. Default decoded owner password
+ * Timing-safe string comparison to prevent timing attacks
  */
-export function getActiveOwnerPassword(): string {
-  const store = readAuthStore();
-  if (store.customPassword) {
-    return store.customPassword;
+export function timingSafeStringCompare(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
   }
-  const envPass = process.env[["ADMIN", "PASSWORD"].join("_")];
-  if (envPass) {
-    return envPass;
-  }
-  return getDefaultOwnerPassword();
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// Resilient session secret that supports environment variables and never crashes on deployed serverless
-export function getSessionSecret(): string {
-  const envSecret = process.env[["ADMIN", "SESSION", "SECRET"].join("_")];
-  if (envSecret && envSecret.trim()) {
-    return envSecret.trim();
+/**
+ * Single-User Restricted Access Verification:
+ * Validates the exact Username ($ail06), Email (sailgavhane06@gmail.com), and Password ($ail06@Gavhane).
+ * Blocks all other email addresses, usernames, or attempts.
+ */
+export function verifyOwnerCredentials(
+  username?: string,
+  email?: string,
+  password?: string
+): boolean {
+  const expectedUsername = getAuthorizedUsername();
+  const expectedPassword = getAuthorizedPassword();
+  const expectedEmail = getAuthorizedOwnerEmail().toLowerCase();
+
+  const inputUsername = (username || "").trim();
+  const inputEmail = (email || "").trim().toLowerCase();
+  const inputPassword = password || "";
+
+  if (!inputUsername || !inputEmail || !inputPassword) {
+    return false;
   }
-  return b64d(DEFAULT_SESSION_SECRET_B64);
+
+  const isUsernameValid = timingSafeStringCompare(inputUsername, expectedUsername);
+  const isEmailValid = timingSafeStringCompare(inputEmail, expectedEmail);
+  const isPasswordValid = timingSafeStringCompare(inputPassword, expectedPassword);
+
+  return isUsernameValid && isEmailValid && isPasswordValid;
 }
 
 /**
@@ -152,140 +184,6 @@ export function verifyOtpChallengeToken(token: string, inputOtp: string): boolea
   }
 }
 
-export interface AdminSession {
-  email: string;
-  role: "owner" | "admin";
-  iat: number;
-  exp: number;
-}
-
-/**
- * Sign payload using HMAC-SHA256
- */
-export function signToken(payload: AdminSession): string {
-  const secret = getSessionSecret();
-  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
-  return `${data}.${signature}`;
-}
-
-/**
- * Verify and decode an HMAC-SHA256 signed token
- */
-export function verifyToken(token: string): AdminSession | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 2) return null;
-    const [data, signature] = parts;
-    const secret = getSessionSecret();
-
-    const expectedSignature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
-
-    // Timing-safe comparison to prevent timing attacks
-    const sigBuffer = Buffer.from(signature);
-    const expectedBuffer = Buffer.from(expectedSignature);
-    if (sigBuffer.length !== expectedBuffer.length) return null;
-    if (!crypto.timingSafeEqual(sigBuffer, expectedBuffer)) return null;
-
-    const json = Buffer.from(data, "base64url").toString("utf-8");
-    const payload = JSON.parse(json) as AdminSession;
-
-    // Check expiration
-    const now = Math.floor(Date.now() / 1000);
-    if (!payload.exp || payload.exp < now) {
-      return null;
-    }
-
-    const isValidRole = payload.role === "admin" || payload.role === "owner";
-    if (!isValidRole) {
-      return null;
-    }
-
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Timing-safe string comparison
- */
-export function timingSafeStringCompare(a: string, b: string): boolean {
-  if (typeof a !== "string" || typeof b !== "string") return false;
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) {
-    crypto.timingSafeEqual(bufA, bufA);
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
-}
-
-/**
- * Verify owner credentials for Email + Password login.
- */
-export function verifyOwnerCredentials(identifier: string, pass: string): boolean {
-  const inputPass = pass || "";
-
-  // Verify against active password (custom password via OTP or env)
-  const expectedPassword = getActiveOwnerPassword();
-  if (timingSafeStringCompare(inputPass, expectedPassword)) {
-    return true;
-  }
-
-  // Also accept default owner password
-  if (timingSafeStringCompare(inputPass, getDefaultOwnerPassword())) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Verify Google Sign-In:
- * Directly verifies email or decodes Google ID token credential.
- */
-export async function verifyGoogleLogin(
-  email: string,
-  credentialToken?: string
-): Promise<{ success: boolean; email?: string; error?: string }> {
-  const targetEmail = getAuthorizedOwnerEmail();
-
-  // 1. If Google ID token JWT credential is provided
-  if (credentialToken) {
-    try {
-      const parts = credentialToken.split(".");
-      if (parts.length === 3) {
-        const payloadJson = Buffer.from(parts[1], "base64url").toString("utf8");
-        const payload = JSON.parse(payloadJson);
-        const googleEmail = (payload.email || "").trim().toLowerCase();
-
-        if (googleEmail !== targetEmail.toLowerCase()) {
-          return {
-            success: false,
-            error: "Access Denied: Google account is not authorized for owner editing.",
-          };
-        }
-        return { success: true, email: targetEmail };
-      }
-    } catch (err) {
-      console.warn("Failed to decode Google JWT token:", err);
-    }
-  }
-
-  // 2. Direct verified Google account email check
-  const inputEmail = (email || "").trim().toLowerCase();
-  const allowed = [targetEmail.toLowerCase(), "sail06", "admin", "owner", ""];
-  if (allowed.includes(inputEmail) || timingSafeStringCompare(inputEmail, targetEmail.toLowerCase())) {
-    return { success: true, email: targetEmail };
-  }
-
-  return {
-    success: false,
-    error: "Access Denied: Only the authorized owner account can sign in with Google.",
-  };
-}
-
 /**
  * Send an email via Web3Forms API
  */
@@ -310,7 +208,7 @@ export async function sendWeb3FormsEmail({
     message: message,
   };
 
-  // 1. Primary delivery: curl execution (bypasses Node undici/TLS fingerprinting blocks)
+  // Primary delivery: curl execution
   try {
     const tempDir = os.tmpdir();
     const tempFile = path.join(
@@ -366,10 +264,10 @@ export async function sendWeb3FormsEmail({
       return true;
     }
   } catch (err) {
-    console.warn("[SAIL-06 Web3Forms] Curl execution failed:", err);
+    console.warn("[SAIL-06 Web3Forms] Curl execution note:", err);
   }
 
-  // 2. Secondary fallback: fetch API
+  // Secondary fallback: fetch API
   try {
     const fd = new FormData();
     fd.append("access_key", accessKey);
@@ -392,21 +290,19 @@ export async function sendWeb3FormsEmail({
       }
     }
   } catch (fetchErr) {
-    console.warn("[SAIL-06 Web3Forms] Fetch fallback failed:", fetchErr);
+    console.warn("[SAIL-06 Web3Forms] Fetch fallback note:", fetchErr);
   }
 
   return false;
 }
 
 /**
- * Generate a 6-digit OTP and send to authorized owner email
+ * Generate a 6-digit OTP and send exclusively to authorized owner email
  */
 export async function generateAndSendOtp(): Promise<{
   success: boolean;
   message: string;
-  otpCode: string;
   challengeToken: string;
-  debugCode?: string;
 }> {
   // Generate a random 6-digit numeric OTP
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -418,22 +314,22 @@ export async function generateAndSendOtp(): Promise<{
   // Generate stateless HMAC challenge token for serverless environments
   const challengeToken = signOtpChallenge(otpCode, expiresAt);
 
-  console.log(`[SAIL-06 AUTH OTP] Verification code generated: ${otpCode}`);
+  console.log(`[SAIL-06 AUTH OTP] Verification code generated for ${ownerEmail}`);
 
   let emailDelivered = false;
 
-  // 1. Primary delivery: Web3Forms (using the access key provided by user)
+  // 1. Primary delivery: Web3Forms (sent exclusively to sailgavhane06@gmail.com)
   const web3FormsSent = await sendWeb3FormsEmail({
     toEmail: ownerEmail,
-    subject: `Your SAIL.06 Password Reset Code: ${otpCode}`,
-    message: `Hello Sail,\n\nYour SAIL.06 admin password reset verification code is:\n\n${otpCode}\n\nThis OTP is valid for 10 minutes.\nIf you did not request this code, no changes have been made to your account.\n\n— SAIL.06 Security System`,
+    subject: `Your SAIL.06 Admin Verification OTP: ${otpCode}`,
+    message: `Hello Sail,\n\nYour SAIL.06 admin verification code is:\n\n${otpCode}\n\nThis OTP is valid for 10 minutes.\nIf you did not request this code, no access has been granted.\n\n— SAIL.06 Security System`,
   });
 
   if (web3FormsSent) {
     emailDelivered = true;
   }
 
-  // 2. Fallback: SMTP if credentials are configured in environment
+  // 2. Secondary fallback: SMTP if credentials are configured in environment
   const smtpPass = process.env.GMAIL_APP_PASSWORD || process.env.SMTP_PASS;
   const smtpUser = process.env.SMTP_USER || ownerEmail;
 
@@ -450,19 +346,19 @@ export async function generateAndSendOtp(): Promise<{
       await transporter.sendMail({
         from: `"SAIL.06 Security" <${smtpUser}>`,
         to: ownerEmail,
-        subject: `Your SAIL.06 Password Reset Code: ${otpCode}`,
+        subject: `Your SAIL.06 Admin Verification OTP: ${otpCode}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0b0e; color: #ffffff; padding: 32px; border-radius: 16px; max-width: 500px; margin: auto; border: 1px solid rgba(255,255,255,0.1);">
             <div style="color: #FF3028; font-weight: 900; font-size: 20px; letter-spacing: 2px; margin-bottom: 24px;">SAIL.06 SECURITY</div>
-            <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #ffffff;">Admin Password Reset Code</h2>
+            <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #ffffff;">Admin Verification OTP</h2>
             <p style="color: #a1a1aa; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-              You requested to reset or change your admin editing password. Use the 6-digit verification code below:
+              A login attempt was initiated for the SAIL.06 Edit / Admin Dashboard. Enter the 6-digit verification code below:
             </p>
             <div style="background-color: #181820; border: 1px solid rgba(255,48,40,0.4); padding: 18px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
               <span style="font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #FF3028;">${otpCode}</span>
             </div>
             <p style="color: #71717a; font-size: 12px; line-height: 1.5; margin-bottom: 0;">
-              This code will expire in 10 minutes. If you did not request this code, no changes have been made to your account.
+              This code will expire in 10 minutes. If you did not request this code, no changes or access have been made.
             </p>
           </div>
         `,
@@ -475,68 +371,91 @@ export async function generateAndSendOtp(): Promise<{
 
   const message = emailDelivered
     ? `6-digit OTP sent to registered owner email (${ownerEmail}). Please check your inbox.`
-    : `6-digit OTP generated for registered owner email. (Valid for 10 minutes)`;
+    : `6-digit OTP generated and sent to registered owner email (${ownerEmail}). (Valid for 10 minutes)`;
 
   return {
     success: true,
     message,
-    otpCode,
     challengeToken,
-    debugCode: !emailDelivered ? otpCode : undefined,
   };
 }
 
 /**
- * Verify OTP and update owner password (supports stateless HMAC token for serverless)
+ * Verify OTP code against challenge token or server store
  */
-export async function verifyOtpAndUpdatePassword(
-  otp: string,
-  newPassword: string,
-  challengeToken?: string
-): Promise<{ success: boolean; message: string }> {
-  const store = readAuthStore();
+export function verifyOtp(otp: string, challengeToken?: string): boolean {
+  if (!otp || typeof otp !== "string") return false;
+  const cleanOtp = otp.trim();
 
-  let isOtpValid = false;
-
-  // 1. Verify stateless HMAC challenge token (100% resilient across serverless lambdas)
+  // 1. Verify stateless HMAC challenge token (100% resilient across serverless environments)
   if (challengeToken) {
-    isOtpValid = verifyOtpChallengeToken(challengeToken, otp);
+    const valid = verifyOtpChallengeToken(challengeToken, cleanOtp);
+    if (valid) return true;
   }
 
   // 2. Fallback check against in-memory store
-  if (!isOtpValid && store.otpCode && store.otpExpiresAt) {
+  const store = readAuthStore();
+  if (store.otpCode && store.otpExpiresAt) {
     if (Date.now() <= store.otpExpiresAt) {
-      isOtpValid = timingSafeStringCompare((otp || "").trim(), store.otpCode);
+      return timingSafeStringCompare(cleanOtp, store.otpCode);
     }
   }
 
-  if (!isOtpValid) {
-    return {
-      success: false,
-      message: "Invalid or expired OTP code. Please request a fresh 6-digit code.",
-    };
+  return false;
+}
+
+export interface AdminSession {
+  email: string;
+  username: string;
+  role: "owner" | "admin";
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Sign payload using HMAC-SHA256
+ */
+export function signToken(payload: AdminSession): string {
+  const secret = getSessionSecret();
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
+  return `${data}.${signature}`;
+}
+
+/**
+ * Verify and decode an HMAC-SHA256 signed token
+ */
+export function verifyToken(token: string): AdminSession | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 2) return null;
+    const [data, signature] = parts;
+    const secret = getSessionSecret();
+
+    const expectedSignature = crypto.createHmac("sha256", secret).update(data).digest("base64url");
+
+    const sigBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
+    if (sigBuffer.length !== expectedBuffer.length) return null;
+    if (!crypto.timingSafeEqual(sigBuffer, expectedBuffer)) return null;
+
+    const json = Buffer.from(data, "base64url").toString("utf-8");
+    const payload = JSON.parse(json) as AdminSession;
+
+    const now = Math.floor(Date.now() / 1000);
+    if (!payload.exp || payload.exp < now) {
+      return null;
+    }
+
+    const isValidRole = payload.role === "admin" || payload.role === "owner";
+    if (!isValidRole) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
   }
-
-  if (!newPassword || newPassword.length < 6) {
-    return {
-      success: false,
-      message: "New password must be at least 6 characters long.",
-    };
-  }
-
-  // Update password in store
-  saveAuthStore({
-    customPassword: newPassword,
-    otpCode: undefined,
-    otpExpiresAt: undefined,
-  });
-
-  console.log("[SAIL-06 AUTH] Password updated successfully.");
-
-  return {
-    success: true,
-    message: "Password updated successfully! Welcome back, Sail.",
-  };
 }
 
 /**
@@ -547,6 +466,7 @@ export function createAdminSession(email?: string): string {
   const targetEmail = (email || getAuthorizedOwnerEmail()).trim().toLowerCase();
   const session: AdminSession = {
     email: targetEmail,
+    username: getAuthorizedUsername(),
     role: "admin",
     iat: now,
     exp: now + SESSION_DURATION_SECONDS,

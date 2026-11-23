@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     authenticated: true,
     user: {
       email: session.email,
+      username: session.username || "$ail06",
       role: session.role,
       exp: session.exp,
     },

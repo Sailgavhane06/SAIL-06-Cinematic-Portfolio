@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  verifyOtpAndUpdatePassword,
+  verifyOtp,
   getAuthorizedOwnerEmail,
+  getAuthorizedUsername,
   createAdminSession,
   COOKIE_NAME,
   OTP_COOKIE_NAME,
@@ -10,41 +11,45 @@ import {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { email, otp, newPassword, challengeToken } = body;
+    const { otp, challengeToken } = body;
     const ownerEmail = getAuthorizedOwnerEmail();
+    const ownerUsername = getAuthorizedUsername();
 
-    if (!otp || typeof otp !== "string" || !newPassword || typeof newPassword !== "string") {
+    if (!otp || typeof otp !== "string" || otp.trim().length !== 6) {
       return NextResponse.json(
-        { error: "Both the 6-digit OTP code and a new password are required." },
-        { status: 400 }
+        { error: "Unauthorized Access" },
+        { status: 401 }
       );
     }
 
-    // Get HMAC challenge token from cookie or request body
+    // Get HMAC challenge token from request body or HttpOnly cookie
     const tokenFromCookie = req.cookies.get(OTP_COOKIE_NAME)?.value;
     const tokenToVerify = challengeToken || tokenFromCookie;
 
-    const result = await verifyOtpAndUpdatePassword(otp.trim(), newPassword, tokenToVerify);
+    const isValid = verifyOtp(otp.trim(), tokenToVerify);
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "Unauthorized Access" },
+        { status: 401 }
+      );
     }
 
-    // Automatically create admin session for owner so they are immediately authenticated
+    // Correct OTP verified! Now unlock the Edit/Admin dashboard by creating the admin session
     const sessionToken = createAdminSession(ownerEmail);
     const response = NextResponse.json({
       success: true,
-      message: result.message,
+      message: "Admin authentication successful. Welcome, Sail!",
       user: {
         email: ownerEmail,
-        username: "Sail Gavhane",
+        username: ownerUsername,
         role: "admin",
       },
     });
 
     const isProduction = process.env.NODE_ENV === "production";
 
-    // Set owner session cookie
+    // Set owner session cookie (Admin Dashboard unlocked)
     response.cookies.set(COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: isProduction,
@@ -60,8 +65,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("OTP verify error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred during password update." },
-      { status: 500 }
+      { error: "Unauthorized Access" },
+      { status: 401 }
     );
   }
 }
